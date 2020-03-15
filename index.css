@@ -1,6 +1,7 @@
 body{
   background-color: #f78c00;
   text-align: center;
+  width: 100vw;
 }
 button {
   background:#00eeff
@@ -10,9 +11,13 @@ button {
   height: 100px;
   display: block;
   margin: auto;
-  margin-bottom: 15px;
+  margin-bottom: 35px;
 }
-
+#ssbtnsdiv{
+  position: absolute;
+  top: 25vh;
+  width: 100%;
+}
 #howTo{
  top: 25vh; 
 }
