@@ -6,13 +6,16 @@ button {
   background:#00eeff
 }
 .ssbtns{
-  width: 500px;
-  height: 100px;
+  width: 400px;
+  height: 80px;
   display: block;
   margin: auto;
   margin-bottom: 15px;
+  font-size: 70px;
 }
-
+#Title{
+  font-size: 100px;
+}
 #howTo{
  top: 25vh; 
 }
