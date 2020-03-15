@@ -1,12 +1,16 @@
-body{background-color: #f700e3;}
+body{
+  background-color: #f78c00;
+  text-align: center;
+}
 button {
   background:#00eeff
 }
 .ssbtns{
-  position: absolute;
-  left: 50vw;
-  width: 100px;
-  height: 50px;
+  width: 500px;
+  height: 100px;
+  display: block;
+  margin: auto;
+  margin-bottom: 15px;
 }
 
 #howTo{
