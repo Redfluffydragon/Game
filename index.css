@@ -1,11 +1,15 @@
 body{
   background-color: #ff8800;
   text-align: center;
-  width: 100vw;
+  width: 100%;
+
+  margin: 0;
 }
+
 button {
   background:#00eeff98
 }
+
 .ssbtns{
   width: 400px;
   display: block;
@@ -15,6 +19,7 @@ button {
   font-family: fantasy;
   color: #ff984f;
 }
+
 #Title{
   font-size: 100px;
   margin-bottom: 35px;
@@ -24,25 +29,25 @@ text-decoration: underline;
 text-decoration-color: rgb(17, 0, 255);
 color: rgb(17, 0, 255);
 }
+
 #ssbtnsdiv{
   position: absolute;
   top: 25vh;
   width: 100%;
 }
+
 #howTo{
  top: 25vh; 
 }
-#youFool{
-  font-size: 250px;
+
+#afterStart {
   display: none;
-  font-family: impact;
 }
+
 #backbtn{
   position: absolute;
-  top: 20vh;
+  top: 10vh;
   left: 10vw;
-  width: 100px;
-  height: 60px;
   margin: auto;
   font-size: 40px;
 }
