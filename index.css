@@ -1,7 +1,9 @@
 body{
   background-color: #0026ff;
   text-align: center;
-  width: 100vw;
+  width: 100%;
+
+  margin: 0;
 }
 button {
   background:#00eeff
@@ -19,10 +21,10 @@ button {
   font-size: 100px;
   margin-bottom: 35px;
   margin-top: 25px;
-font-family: Arial;
-text-decoration: underline;
-text-decoration-color: rgb(255, 230, 0);
-color: rgb(255, 230, 0);
+  font-family: Arial;
+  text-decoration: underline;
+  text-decoration-color: rgb(255, 230, 0);
+  color: rgb(255, 230, 0);
 }
 #ssbtnsdiv{
   position: absolute;
@@ -40,10 +42,8 @@ color: rgb(255, 230, 0);
 }
 #backbtn{
   position: absolute;
-  top: 20vh;
+  top: 10vh;
   left: 10vw;
-  width: 100px;
-  height: 60px;
   margin: auto;
   font-size: 40px;
 }
