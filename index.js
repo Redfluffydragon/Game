@@ -3,22 +3,21 @@ let ssbtnsdiv = document.getElementById("ssbtnsdiv");
 let afterStart = document.getElementById("afterStart");
 const canvas = document.getElementById("canvas");
 
-canvas.width = window.innerWidth;
+canvas.width = window.innerWidth; //set canvas to width of window
 let ctx = canvas.getContext("2d");
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 let points = [];
 
-//height can't be greater than width right now (the grid gets messed up, not sure how to fix)
+//changes the number of points in the grid
 let gridWidth = 19;
 let gridHeight = 8;
 //spacing between points on the grid - in pixels?
 let gridSize = 75;
 //offset from left of canvas
-let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
+let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;//center the grid in the window
 let gridOffsetY = 25; //offset from top of canvas
-canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1);
-
+canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1); //set canvas height to a minimum given the grid height
 
 startbtn.addEventListener("click", start, false);
 

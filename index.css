@@ -24,10 +24,10 @@ button {
   font-size: 100px;
   margin-bottom: 35px;
   margin-top: 25px;
-font-family: Arial;
-text-decoration: underline;
-text-decoration-color: rgb(17, 0, 255);
-color: rgb(17, 0, 255);
+  font-family: Arial;
+  text-decoration: underline;
+  text-decoration-color: rgb(17, 0, 255);
+  color: rgb(17, 0, 255);
 }
 
 #ssbtnsdiv{
