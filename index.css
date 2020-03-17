@@ -2,7 +2,6 @@ body{
   background-color: #ff8800;
   text-align: center;
   width: 100%;
-
   margin: 0;
 }
 
@@ -50,4 +49,8 @@ button {
   left: 10vw;
   margin: auto;
   font-size: 40px;
+}
+
+#why{
+  margin-top: 700px;
 }
