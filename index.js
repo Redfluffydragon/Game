@@ -89,6 +89,5 @@ function randomGrid() {
     }
     points.push(column);
   }
-}
+};
 randomGrid();
-console.log(points);

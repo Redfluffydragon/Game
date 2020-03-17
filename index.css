@@ -1,12 +1,12 @@
 body{
-  background-color: #0026ff;
+  background-color: #ff0000;
   text-align: center;
   width: 100%;
 
   margin: 0;
 }
 button {
-  background:#00eeff
+  background:#00eeff98
 }
 .ssbtns{
   width: 400px;
@@ -15,22 +15,21 @@ button {
   margin-bottom: 20px;
   font-size: 70px;
   font-family: fantasy;
-  color: rgb(255, 230, 0);
+  color: #ff984f;
 }
 #Title{
   font-size: 100px;
   margin-bottom: 35px;
   margin-top: 25px;
-  font-family: Arial;
-  text-decoration: underline;
-  text-decoration-color: rgb(255, 230, 0);
-  color: rgb(255, 230, 0);
+font-family: Arial;
+text-decoration: underline;
+text-decoration-color: rgb(60, 255, 0);
+color: rgb(60, 255, 0);
 }
 #ssbtnsdiv{
   position: absolute;
   top: 25vh;
   width: 100%;
-  font-family: 'Franklin Gothic Medium';
 }
 #howTo{
  top: 25vh; 
