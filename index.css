@@ -1,5 +1,5 @@
 body{
-  background-color: #ff0000;
+  background-color: #ff8800;
   text-align: center;
   width: 100vw;
 }
@@ -21,8 +21,8 @@ button {
   margin-top: 25px;
 font-family: Arial;
 text-decoration: underline;
-text-decoration-color: rgb(60, 255, 0);
-color: rgb(60, 255, 0);
+text-decoration-color: rgb(17, 0, 255);
+color: rgb(17, 0, 255);
 }
 #ssbtnsdiv{
   position: absolute;
