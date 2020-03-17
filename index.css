@@ -13,17 +13,22 @@ button {
   margin-bottom: 20px;
   font-size: 70px;
   font-family: fantasy;
+  color: rgb(255, 230, 0);
 }
 #Title{
   font-size: 100px;
   margin-bottom: 35px;
   margin-top: 25px;
 font-family: Arial;
+text-decoration: underline;
+text-decoration-color: rgb(255, 230, 0);
+color: rgb(255, 230, 0);
 }
 #ssbtnsdiv{
   position: absolute;
   top: 25vh;
   width: 100%;
+  font-family: 'Franklin Gothic Medium';
 }
 #howTo{
  top: 25vh; 
@@ -31,7 +36,7 @@ font-family: Arial;
 #youFool{
   font-size: 250px;
   display: none;
-  font-family:sans-serif;
+  font-family: impact;
 }
 #backbtn{
   position: absolute;
