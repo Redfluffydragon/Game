@@ -5,9 +5,11 @@ body{
 
   margin: 0;
 }
+
 button {
   background:#00eeff98
 }
+
 .ssbtns{
   width: 400px;
   display: block;
@@ -17,28 +19,31 @@ button {
   font-family: fantasy;
   color: #ff984f;
 }
+
 #Title{
   font-size: 100px;
   margin-bottom: 35px;
   margin-top: 25px;
-font-family: Arial;
-text-decoration: underline;
-text-decoration-color: rgb(60, 255, 0);
-color: rgb(60, 255, 0);
+  font-family: Arial;
+  text-decoration: underline;
+  text-decoration-color: rgb(60, 255, 0);
+  color: rgb(60, 255, 0);
 }
+
 #ssbtnsdiv{
   position: absolute;
   top: 25vh;
   width: 100%;
 }
+
 #howTo{
  top: 25vh; 
 }
-#youFool{
-  font-size: 250px;
+
+#afterStart {
   display: none;
-  font-family: impact;
 }
+
 #backbtn{
   position: absolute;
   top: 10vh;
