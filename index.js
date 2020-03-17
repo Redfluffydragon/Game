@@ -74,5 +74,5 @@ function randomGrid() {
       });
     }
   }
-}
+};
 randomGrid();
