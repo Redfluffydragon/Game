@@ -16,26 +16,24 @@ let gridSize = 75;
 startbtn.addEventListener("click", start, false);
 
 function start(){
-  // document.body.style.background = "#ff00c8";
-  // youFool.style.display = "block";
   ssbtnsdiv.style.display = "none";
 
   ctx.lineWidth = 5;
   ctx.moveTo(points[0].x, points[0].y);
-
-  for (let i = 0; i < (gridWidth-1)*(gridHeight-1)+1; i++) {
+  // let i = 15;
+  // console.log(i, i%(gridHeight-1))
+  for (let i = 0; i < points.length-gridHeight-1; i++) {
     ctx.moveTo(points[i].x, points[i].y);
     // ctx.beginPath();
-    if (i%(gridHeight-1) !== 0 || i === 0) {
+    if ((i-Math.abs(Math.trunc(i/(gridHeight-1))-1))%(gridHeight-1) === 0 && i !== 1) {
+      ctx.moveTo(points[i].x, points[i].y);
+    }
+    else {
       ctx.lineTo(points[i+gridHeight].x, points[i+gridHeight].y);
       ctx.lineTo(points[i+1+gridHeight].x, points[i+1+gridHeight].y);
       ctx.lineTo(points[i+1].x, points[i+1].y);
       ctx.lineTo(points[i].x, points[i].y)
     }
-    else {
-      ctx.moveTo(points[i].x, points[i].y);
-    }
-    console.log(i);
     // ctx.closePath();
   }
 
