@@ -34,9 +34,10 @@ font-family: Arial;
 }
 #backbtn{
   position: absolute;
-  top: 30vh;
+  top: 20vh;
+  left: 10vw;
   width: 100px;
   height: 60px;
   margin: auto;
-font-size: 40px;
+  font-size: 40px;
 }

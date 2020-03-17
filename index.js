@@ -7,43 +7,67 @@ ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 let points = [];
 
+let gridWidth = 8;
+let gridHeight = 8;
+//spacing between points on the grid - in pixels?
+let gridSize = 75;
+
 
 startbtn.addEventListener("click", start, false);
 
 function start(){
-  document.body.style.background = "#ff00c8";
-  youFool.style.display = "block";
+  // document.body.style.background = "#ff00c8";
+  // youFool.style.display = "block";
   ssbtnsdiv.style.display = "none";
 
   ctx.lineWidth = 5;
   ctx.moveTo(points[0].x, points[0].y);
-  for (var j = 0; j < 8; j++) {
-    for (var i = 0; i < 8; i++) {
-      if(i !== 7){
-        ctx.lineTo(points[i+1+j*8].x, points[i+1+j*8].y);
+
+  for (let i = 0; i < (gridWidth-1)*(gridHeight-1)+1; i++) {
+    ctx.moveTo(points[i].x, points[i].y);
+    // ctx.beginPath();
+    if (i%(gridHeight-1) !== 0 || i === 0) {
+      ctx.lineTo(points[i+gridHeight].x, points[i+gridHeight].y);
+      ctx.lineTo(points[i+1+gridHeight].x, points[i+1+gridHeight].y);
+      ctx.lineTo(points[i+1].x, points[i+1].y);
+      ctx.lineTo(points[i].x, points[i].y)
+    }
+    else {
+      ctx.moveTo(points[i].x, points[i].y);
+    }
+    console.log(i);
+    // ctx.closePath();
+  }
+
+  /* //Lines down the grid
+  for (let j = 0; j < gridWidth; j++) {
+    for (let i = 0; i < gridHeight; i++) {
+      if(i !== gridHeight-1){
+        ctx.lineTo(points[i+1+j*gridHeight].x, points[i+1+j*gridHeight].y);
       }
       else {
-        if (j < 7) ctx.moveTo(points[i+1+j*8].x, points[i+1+j*8].y);
+        if (j < gridWidth-1) ctx.moveTo(points[i+1+j*gridHeight].x, points[i+1+j*gridHeight].y);
       }
     }
   }
 
-  for (let j = 0; j < 7; j++) {
-    ctx.moveTo(points[j*8].x, points[j*8].y);
-    for(let i = 0; i < 8; i++) {
-      ctx.moveTo(points[i+j*8].x, points[i+j*8].y)
-      ctx.lineTo(points[i+8+j*8].x, points[i+8+j*8].y);
+  //Lines across the grid
+  for (let j = 0; j < gridWidth-1; j++) {
+    ctx.moveTo(points[j*gridHeight].x, points[j*gridHeight].y);
+    for(let i = 0; i < gridHeight; i++) {
+      ctx.moveTo(points[i+j*gridHeight].x, points[i+j*gridHeight].y)
+      ctx.lineTo(points[i+gridHeight+j*gridHeight].x, points[i+gridHeight+j*gridHeight].y);
     }
-  }
+  } */
   ctx.stroke();
 };
 
 function randomGrid() {
   points.length = 0;
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      var x = i*50+25+Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random())*8;
-      var y = j*50+25+Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random())*8;
+  for (let i = 0; i < gridWidth; i++) {
+    for (let j = 0; j < gridHeight; j++) {
+      var x = i*gridSize+25+Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random())*8;
+      var y = j*gridSize+25+Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random())*8;
       points.push({
         x: x,
         y: y,
@@ -52,16 +76,3 @@ function randomGrid() {
   }
 }
 randomGrid();
-
-/* ctx.moveTo(points[0].x, points[0].y);
-
-for (var j = 0; j < 8; j++) {
-  for (var i = 1; i < 9; i++) {
-      if(i%8 !== 0){
-          ctx.lineTo(points[i-1+j*8+1].x, points[i-1+j*8+1].y);
-      }
-      else {
-        ctx.moveTo(points[i-1+j*8].x, points[i-1+j*8].y);
-      }
-  }
-} */
