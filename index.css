@@ -1,5 +1,6 @@
 body{
   background-color: #ff8800;
+  /* background-color: #ffe8ce; */
   text-align: center;
   width: 100%;
   margin: 0;
@@ -16,7 +17,10 @@ button {
   margin-bottom: 20px;
   font-size: 70px;
   font-family: fantasy;
-  color: #ff984f;
+  /* color: #ff984f; */
+  color: rgb(56, 29, 105);
+
+
 }
 
 #Title{
@@ -25,8 +29,9 @@ button {
   margin-top: 25px;
   font-family: Arial;
   text-decoration: underline;
-  text-decoration-color: rgb(17, 0, 255);
-  color: rgb(17, 0, 255);
+  color: rgb(56, 29, 105);
+  /* color: rgb(17, 0, 255); */
+
 }
 
 #ssbtnsdiv{
@@ -46,9 +51,11 @@ button {
 #backbtn{
   position: absolute;
   top: 10vh;
-  left: 10vw;
+  left: 2.5vw;
   margin: auto;
   font-size: 40px;
+  font-family: fantasy;
+  color: rgb(56, 29, 105);
 }
 
 #why{
