@@ -38,6 +38,7 @@ function back() {
 }
 
 function randomGrid() {
+  //generate random points
   points.length = 0;
   for (let i = 0; i < gridHeight; i++) {
     let column = [];
@@ -52,28 +53,12 @@ function randomGrid() {
     }
     points.push(column);
   }
-};
-
-function drawQuads() {
-  ctx.lineWidth = 0.3;
-  ctx.strokeStyle = '#222222'
-
-  //draw all the quadrilaterals
+  //sort and push into quadrilaterals array
   for (let i = 0; i < gridHeight-1; i++) {
     for (let j = 0; j < gridWidth-1; j++) {
-      let color = ((((i+1)*(j+1))/2+20)*4).toString(16);
-      // let color = (Math.trunc(Math.random()*180+75).toString(16));
 
-      ctx.fillStyle = '#'+33+color+33;
-      ctx.beginPath();
-      ctx.moveTo(points[i][j].x, points[i][j].y);
-      ctx.lineTo(points[i+1][j].x, points[i+1][j].y);
-      ctx.lineTo(points[i+1][j+1].x, points[i+1][j+1].y);
-      ctx.lineTo(points[i][j+1].x, points[i][j+1].y);
-      ctx.lineTo(points[i][j].x, points[i][j].y);
-      ctx.fill();
-      ctx.stroke();
-      
+      let gVal = Math.min(((((i+1)*(j+1))/2+20)*4), 255).toString(16); //limit color value to 255 (otherwise it won't go back to that color, but it will go there in the first place for some reason)
+      let color = '#'+33+gVal+33;
       //add each to quadrilaterals array
       q.push({
         tl: {
@@ -91,9 +76,17 @@ function drawQuads() {
         tr: {
           x: points[i][j+1].x, 
           y: points[i][j+1].y
-        }
+        },
+        color: color
       })
     }
+  }
+};
+
+function drawQuads() {
+  //draw all the quadrilaterals
+  for (let i = 0; i < q.length; i++) {
+    drawQuad(i);
   }
 }
 
@@ -103,17 +96,35 @@ drawQuads();
 //cross products for each side going in a circle - cross point vectors for both points that define each side
 //needs to be in a 3d coordinate system, with z being the same for all vectors
 //if the cross products are taken going clockwise, in a right-hand coordinate system, if the dot product of a given point vector with each of the line vectors for each of the sides is negative, that point is inside the polygon
-//flip the sign of the dot product if going counterclockwise or using a left-hand coordinate system
+//the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
 
 
 canvas.addEventListener('click', e => {
   clickedQuad = checkInside(e);
-  console.log(clickedQuad);
 
-  if (clickedQuad = [2, 3]) {
-    
+  if (clickedQuad !== false) {
+    let color = q[clickedQuad].newColor === q[clickedQuad].color ? 'black' : q[clickedQuad].color;
+    drawQuad(clickedQuad, color);
   }
+
 }, false);
+
+function drawQuad(i, color=q[i].color) {
+  q[i].newColor = color;
+
+  ctx.lineWidth = 0.3;
+  // ctx.strokeStyle = '#222222'
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.moveTo(q[i].tl.x, q[i].tl.y);
+  ctx.lineTo(q[i].tr.x, q[i].tr.y);
+  ctx.lineTo(q[i].br.x, q[i].br.y);
+  ctx.lineTo(q[i].bl.x, q[i].bl.y);
+  ctx.lineTo(q[i].tl.x, q[i].tl.y);
+  ctx.fill();
+  ctx.stroke();
+}
 
 //returns v1 cross v2
 function crossProd(v1, v2) {
@@ -134,11 +145,13 @@ function checkInside(e) {
     let dotChecks = [];
     for (let i = 0; i < 4; i++) {
       tempSideVector = crossProd([q[j][corners[i]].x, q[j][corners[i]].y], [q[j][corners[i+1]].x, q[j][corners[i+1]].y]);
-      dotChecks.push(dotProd(tempSideVector, [e.clientX, e.clientY-canvas.offsetTop, 1]));
+      dotChecks.push(dotProd(tempSideVector, [e.clientX, e.clientY - canvas.offsetTop + window.pageYOffset, 1]));
     }
     if (dotChecks[0] > 0 && dotChecks[1] > 0 && dotChecks[2] > 0 && dotChecks[3] > 0) {
-       //return quad-based coordinates of quad clicked on
-      return [j%(gridWidth-1), Math.trunc(j/(gridWidth-1))];
+      //return number of the quadrilateral clicked on
+      return j;
+      //return quad-based coordinates of quad clicked on
+      // return [j%(gridWidth-1), Math.trunc(j/(gridWidth-1))];
     }
   }
   return false;
