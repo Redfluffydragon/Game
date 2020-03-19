@@ -4,6 +4,8 @@ let ssbtnsdiv = document.getElementById('ssbtnsdiv');
 let afterStart = document.getElementById('afterStart');
 const canvas = document.getElementById('canvas');
 
+let screen = 'start';
+
 canvas.width = window.innerWidth; //set canvas to width of window
 let ctx = canvas.getContext('2d');
 ctx.lineCap = 'round';
@@ -23,23 +25,32 @@ let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;//center the gr
 let gridOffsetY = 25; //offset from top of canvas
 canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1)+5; //set canvas height to a minimum given the grid height
 
-let clickedQuad;
+//Box-Muller transform (turns a uniform distribution into a standard one)
+const boxMuller = () => Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random());
 
-startbtn.addEventListener('click', start, false);
+let clickedQuad;
+//bool for only adjacent quads or not
+let onlyAdj = false;
+//the quad you start in
+let startQuad;
+
+startbtn.addEventListener('click', beginGame, false);
 backbtn.addEventListener('click', back, false);
 
-function start() {
+function beginGame() {
   ssbtnsdiv.style.display = 'none';
-  afterStart.style.display = 'inline'; 
+  afterStart.style.display = 'inline';
+  start();
+  //set timeout so it doesn't add a tree under where you clicked the start button - not a good solution, but it seems to work
+  window.setTimeout(() => {
+    screen = 'game';
+  }, 100)
 };
 
 function back() {
   ssbtnsdiv.style.display = '';
-  afterStart.style.display = 'none';  
-}
-
-function boxMuller() {
-  return Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random());
+  afterStart.style.display = 'none';
+  screen = 'start';
 }
 
 function randomGrid() {
@@ -82,7 +93,8 @@ function randomGrid() {
           x: points[i][j+1].x, 
           y: points[i][j+1].y
         },
-        color: color
+        color: color,
+        img: false,
       })
     }
   }
@@ -104,25 +116,24 @@ drawQuads();
 //the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
 
 
-document.addEventListener('click', e => {
+document.addEventListener('click', canvasClick, false);
+
+//handle clicks on the canvas
+function canvasClick(e) {
   clickedQuad = checkInside(e);
-
-  if (clickedQuad !== false) {
-    let color = q[clickedQuad].newColor === q[clickedQuad].color ? 'black' : q[clickedQuad].color;
-    drawQuad(clickedQuad, color);
-    let img = document.createElement('IMG');
-    img.src = 'tearTreeSmall.png';
-    img.classList.add('treeimg');
-    let centerCoords = findCenter(clickedQuad);
-
-    img.width = imgSize;
-    img.style.left = centerCoords[0] + canvas.offsetLeft - imgSize/2 + boxMuller()*5 + 'px';
-    img.style.top = centerCoords[1] + canvas.offsetTop - ((94/50)*imgSize)/2 + boxMuller()*4 + 'px';
-    document.body.appendChild(img);
+  //have to do !== false because the first quad is 0
+  if (clickedQuad !== false && screen === 'game' && (onlyAdj === false || (onlyAdj === true && (checkAdj(startQuad, clickedQuad) === true || clickedQuad === startQuad)))) {
+    drawQuads(clickedQuad);
+    quadImg(clickedQuad);
   }
+}
 
-}, false);
+function start() {
+  startQuad = Math.round(Math.random()*q.length);
+  quadImg(startQuad);
+}
 
+//draw one quad
 function drawQuad(i, color=q[i].color) {
   q[i].newColor = color;
 
@@ -138,6 +149,28 @@ function drawQuad(i, color=q[i].color) {
   ctx.lineTo(q[i].tl.x, q[i].tl.y);
   ctx.fill();
   ctx.stroke();
+}
+
+// toggle image on a quad
+function quadImg(quad) {
+  if (q[quad].img == false) {
+    let img = document.createElement('IMG');
+    img.src = 'tearTreeSmall.png';
+    img.classList.add('treeimg');
+    img.id = 'img'+quad;
+
+    let centerCoords = findCenter(quad);
+    img.width = imgSize;
+    img.style.left = centerCoords[0] + canvas.offsetLeft - imgSize/2 + boxMuller()*5 + 'px';
+    img.style.top = centerCoords[1] + canvas.offsetTop - ((94/50)*imgSize)/2 + boxMuller()*4 + 'px';
+    document.body.appendChild(img);
+    q[quad].img = true;
+  }
+  else if (q[quad].img === true) {
+    let findImg = document.getElementById('img'+quad);
+    findImg.parentNode.removeChild(findImg);
+    q[quad].img = false;
+  }
 }
 
 //returns v1 cross v2
@@ -178,11 +211,18 @@ function findCenter(quad) {
   return [avgX, avgY];
 }
 
-function quadCenters() {
-  for (let i = 0; i < q.length; i++) {
-    let centerCoords = findCenter(i);
-    ctx.rect(centerCoords[0], centerCoords[1], 5, 5);
-    ctx.fill();
+//check if the checkQuad is adjacent to the centerQuad
+function checkAdj(centerQuad, checkQuad) {
+  if (checkQuad === centerQuad + 1 || 
+    checkQuad === centerQuad - 1 || 
+    checkQuad === centerQuad + gridWidth-1 || 
+    checkQuad === centerQuad - (gridWidth-1)) {
+    return true;
   }
+  return false;
 }
-quadCenters();
+ 
+//check if there's an image in an adjacent quad
+function adjImg (checkQuad) {
+  //for all adjacent quads if document.getElementById is true for the image id for that quad, return true
+}
