@@ -13,10 +13,11 @@ let q = [];//array for quadrilaterals (one letter for readability)
 const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
 
 //changes the number of points in the grid
-let gridWidth = 15;
-let gridHeight = 8;
+let gridWidth = 19;
+let gridHeight = 10;
 //spacing between points on the grid in pixels
 let gridSize = 75;
+let imgSize = gridSize/2.2;
 //offset from left of canvas
 let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;//center the grid in the window
 let gridOffsetY = 25; //offset from top of canvas
@@ -37,6 +38,10 @@ function back() {
   afterStart.style.display = 'none';  
 }
 
+function boxMuller() {
+  return Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random());
+}
+
 function randomGrid() {
   //generate random points
   points.length = 0;
@@ -44,8 +49,8 @@ function randomGrid() {
     let column = [];
     for (let j = 0; j < gridWidth; j++) {
       //Use a Box-Muller transform to get a standard distribution for the random offset around each grid point (not sure why it can't just be random)
-      let x = Math.round(j*gridSize+gridOffsetX+Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random())*8);
-      let y = Math.round(i*gridSize+gridOffsetY+Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random())*8);
+      let x = Math.round(j*gridSize+gridOffsetX+boxMuller()*8);
+      let y = Math.round(i*gridSize+gridOffsetY+boxMuller()*8);
       column.push({
         x: x,
         y: y,
@@ -99,12 +104,21 @@ drawQuads();
 //the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
 
 
-canvas.addEventListener('click', e => {
+document.addEventListener('click', e => {
   clickedQuad = checkInside(e);
 
   if (clickedQuad !== false) {
     let color = q[clickedQuad].newColor === q[clickedQuad].color ? 'black' : q[clickedQuad].color;
     drawQuad(clickedQuad, color);
+    let img = document.createElement('IMG');
+    img.src = 'tearTreeSmall.png';
+    img.classList.add('treeimg');
+    let centerCoords = findCenter(clickedQuad);
+
+    img.width = imgSize;
+    img.style.left = centerCoords[0] + canvas.offsetLeft - imgSize/2 + boxMuller()*5 + 'px';
+    img.style.top = centerCoords[1] + canvas.offsetTop - ((94/50)*imgSize)/2 + boxMuller()*4 + 'px';
+    document.body.appendChild(img);
   }
 
 }, false);
@@ -156,3 +170,19 @@ function checkInside(e) {
   }
   return false;
 }
+
+//return canvas coordinates of the center of a quad
+function findCenter(quad) {
+  let avgY = (q[quad].tl.y + q[quad].tr.y + q[quad].br.y + q[quad].bl.y)/4;
+  let avgX = (q[quad].tl.x + q[quad].tr.x + q[quad].br.x + q[quad].bl.x)/4;
+  return [avgX, avgY];
+}
+
+function quadCenters() {
+  for (let i = 0; i < q.length; i++) {
+    let centerCoords = findCenter(i);
+    ctx.rect(centerCoords[0], centerCoords[1], 5, 5);
+    ctx.fill();
+  }
+}
+quadCenters();
