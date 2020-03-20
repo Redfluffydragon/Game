@@ -16,13 +16,13 @@ const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
 
 //changes the number of points in the grid
 let gridWidth = 19;
-let gridHeight = 10;
+let gridHeight = 9;
 //spacing between points on the grid in pixels
 let gridSize = 75;
-let imgSize = gridSize/2.2;
+let imgSize = gridSize/2.2; //for sizing trees correctly
 //offset from left of canvas
 let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;//center the grid in the window
-let gridOffsetY = 25; //offset from top of canvas
+let gridOffsetY = 50; //offset from top of canvas
 canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1)+5; //set canvas height to a minimum given the grid height
 
 //Box-Muller transform (turns a uniform distribution into a standard one)
@@ -30,9 +30,11 @@ const boxMuller = () => Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2
 
 let clickedQuad;
 //bool for only adjacent quads or not
-let onlyAdj = false;
+let onlyAdj = true;
 //the quad you start in
-let startQuad;
+let startQuad = undefined;
+//the height of the image (for centering purposes)
+let imgHeight;
 
 startbtn.addEventListener('click', beginGame, false);
 backbtn.addEventListener('click', back, false);
@@ -115,22 +117,27 @@ drawQuads();
 //if the cross products are taken going clockwise, in a right-hand coordinate system, if the dot product of a given point vector with each of the line vectors for each of the sides is negative, that point is inside the polygon
 //the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
 
-
 document.addEventListener('click', canvasClick, false);
 
 //handle clicks on the canvas
 function canvasClick(e) {
   clickedQuad = checkInside(e);
   //have to do !== false because the first quad is 0
-  if (clickedQuad !== false && screen === 'game' && (onlyAdj === false || (onlyAdj === true && (checkAdj(startQuad, clickedQuad) === true || clickedQuad === startQuad)))) {
+  if (clickedQuad !== false && 
+    screen === 'game' && 
+    (onlyAdj === false || (onlyAdj === true && adjImg(clickedQuad) === true)) ||
+    q[clickedQuad].img === true) {
     drawQuads(clickedQuad);
     quadImg(clickedQuad);
   }
 }
 
 function start() {
-  startQuad = Math.round(Math.random()*q.length);
-  quadImg(startQuad);
+  if (startQuad === undefined) {
+    startQuad = Math.round(Math.random()*q.length);
+    quadImg(startQuad);
+  }
+  startbtn.textContent = 'Resume';
 }
 
 //draw one quad
@@ -155,15 +162,25 @@ function drawQuad(i, color=q[i].color) {
 function quadImg(quad) {
   if (q[quad].img == false) {
     let img = document.createElement('IMG');
-    img.src = 'tearTreeSmall.png';
+    img.src = 'swampTreeSmall.png';
+    imgHeight = 53;
+    /* if (Math.random() < 0.4) {
+      img.src = 'deadTreeSmall.png';
+      imgHeight = 72;
+    }
+    else {
+      img.src = 'tearTreeSmall.png';
+      imgHeight = 94;
+    } */
+
     img.classList.add('treeimg');
-    img.id = 'img'+quad;
+    img.id = 'img'+quad; //give each one a unique id for removal
 
     let centerCoords = findCenter(quad);
     img.width = imgSize;
     img.style.left = centerCoords[0] + canvas.offsetLeft - imgSize/2 + boxMuller()*5 + 'px';
-    img.style.top = centerCoords[1] + canvas.offsetTop - ((94/50)*imgSize)/2 + boxMuller()*4 + 'px';
-    document.body.appendChild(img);
+    img.style.top = centerCoords[1] + canvas.offsetTop - ((imgHeight/50)*imgSize)/2 + boxMuller()*4 + 'px';
+    afterStart.appendChild(img);
     q[quad].img = true;
   }
   else if (q[quad].img === true) {
@@ -211,7 +228,7 @@ function findCenter(quad) {
   return [avgX, avgY];
 }
 
-//check if the checkQuad is adjacent to the centerQuad
+//check if the checkQuad is adjacent to the centerQuad - currently not used
 function checkAdj(centerQuad, checkQuad) {
   if (checkQuad === centerQuad + 1 || 
     checkQuad === centerQuad - 1 || 
@@ -223,6 +240,14 @@ function checkAdj(centerQuad, checkQuad) {
 }
  
 //check if there's an image in an adjacent quad
+//wraps around side edges - not intended
+
 function adjImg (checkQuad) {
-  //for all adjacent quads if document.getElementById is true for the image id for that quad, return true
+  if ((q[checkQuad+1] !== undefined && q[checkQuad+1].img ===  true) || 
+      (q[checkQuad-1] !== undefined && q[checkQuad-1].img ===  true) || 
+    (q[checkQuad + gridWidth-1] !== undefined && q[checkQuad + gridWidth-1].img ===  true) || 
+    q[checkQuad - (gridWidth-1)].img ===  true) {
+    return true;
+  }
+  return false;
 }
