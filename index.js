@@ -11,8 +11,28 @@ let ctx = canvas.getContext('2d');
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 let points = [];
-let q = [];//array for quadrilaterals (one letter for readability)
+let q = [];//array for quadrilaterals (one letter for readability, or at least that's my excuse)
 const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
+
+const coordSigns = [1, 1, -1, -1, 1];
+const biomeFixAlign = [0, -1, 0, 1];
+
+let biomeColors = {
+  swamp: 0x151515, //this gets subtracted from the default color 
+}
+
+let biomeTrees = {
+  swamp: {
+    src: 'swampTreeSmall.png',
+    height: 53,
+    width: 50,
+  },
+  mountain: {
+    src: 'pineTreeSmall.png',
+    height: 63,
+    width: 50,
+  }
+}
 
 //changes the number of points in the grid
 let gridWidth = 19;
@@ -20,9 +40,10 @@ let gridHeight = 9;
 //spacing between points on the grid in pixels
 let gridSize = 75;
 let imgSize = gridSize/2.2; //for sizing trees correctly
+
+let gridOffsetY = 50; //offset from top of canvas
 //offset from left of canvas
 let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;//center the grid in the window
-let gridOffsetY = 50; //offset from top of canvas
 canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1)+5; //set canvas height to a minimum given the grid height
 
 //Box-Muller transform (turns a uniform distribution into a standard one)
@@ -38,7 +59,13 @@ let imgHeight;
 
 startbtn.addEventListener('click', beginGame, false);
 backbtn.addEventListener('click', back, false);
-
+/* 
+window.addEventListener('resize', () => {
+  gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
+  canvas.width = window.innerWidth;
+  drawQuads();
+}, false);
+ */
 function beginGame() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
@@ -55,6 +82,7 @@ function back() {
   screen = 'start';
 }
 
+//generate a semirandom grid and sort into quadrilateral points in q array
 function randomGrid() {
   //generate random points
   points.length = 0;
@@ -76,7 +104,7 @@ function randomGrid() {
     for (let j = 0; j < gridWidth-1; j++) {
 
       let gVal = Math.min(((((i+1)*(j+1))/2+20)*4), 255).toString(16); //limit color value to 255 (otherwise it won't go back to that color, but it will go there in the first place for some reason)
-      let color = '#'+33+gVal+33;
+      let color = parseInt(33+gVal+33, 16);
       //add each to quadrilaterals array
       q.push({
         tl: {
@@ -97,11 +125,14 @@ function randomGrid() {
         },
         color: color,
         img: false,
+        biome: 'default',
+        grayVal: gVal,
       })
     }
   }
 };
 
+//go through q array and draw all quads
 function drawQuads() {
   //draw all the quadrilaterals
   for (let i = 0; i < q.length; i++) {
@@ -109,8 +140,19 @@ function drawQuads() {
   }
 }
 
-randomGrid();
-drawQuads();
+randomGrid(); //generate the random point grid
+
+//set up biomes
+if (Math.random() < 0.5) {
+  biome(4, 'swamp');
+  biome(4, 'mountain');
+}
+else {
+  biome(4, 'mountain');
+  biome(4, 'swamp');
+}
+
+drawQuads(); //draw all the quads the first time
 
 //cross products for each side going in a circle - cross point vectors for both points that define each side
 //needs to be in a 3d coordinate system, with z being the same for all vectors
@@ -142,11 +184,19 @@ function start() {
 
 //draw one quad
 function drawQuad(i, color=q[i].color) {
+  if (q[i].biome === 'swamp') {
+    color = '#' + (color - biomeColors[q[i].biome]).toString(16);
+  }
+  else if (q[i].biome === 'mountain') {
+    color = '#' + q[i].grayVal + q[i].grayVal + q[i].grayVal;
+  }
+  else {
+    color = '#' + color.toString(16);
+  }
   q[i].newColor = color;
 
-  ctx.lineWidth = 0.3;
-  // ctx.strokeStyle = '#222222'
   ctx.fillStyle = color;
+  ctx.lineWidth = 0.3;
 
   ctx.beginPath();
   ctx.moveTo(q[i].tl.x, q[i].tl.y);
@@ -159,20 +209,28 @@ function drawQuad(i, color=q[i].color) {
 }
 
 // toggle image on a quad
-function quadImg(quad) {
+function quadImg(quad, image='default') {
   if (q[quad].img == false) {
     let img = document.createElement('IMG');
-    img.src = 'swampTreeSmall.png';
-    imgHeight = 53;
-    /* if (Math.random() < 0.4) {
-      img.src = 'deadTreeSmall.png';
-      imgHeight = 72;
+    if (image === 'default') {
+      if (q[quad].biome === 'default') {
+        if (Math.random() < 0.4) {
+          img.src = 'deadTreeSmall.png';
+          imgHeight = 72;
+        }
+        else {
+          img.src = 'tearTreeSmall.png';
+          imgHeight = 94;
+        }
+      }
+      else {
+        img.src = biomeTrees[q[quad].biome].src;
+        imgHeight = biomeTrees[q[quad].biome].height;
+      }
     }
     else {
-      img.src = 'tearTreeSmall.png';
-      imgHeight = 94;
-    } */
-
+      img.src = image;
+    }
     img.classList.add('treeimg');
     img.id = 'img'+quad; //give each one a unique id for removal
 
@@ -241,7 +299,6 @@ function checkAdj(centerQuad, checkQuad) {
  
 //check if there's an image in an adjacent quad
 //wraps around side edges - not intended
-
 function adjImg (checkQuad) {
   if ((q[checkQuad+1] !== undefined && q[checkQuad+1].img ===  true) || 
       (q[checkQuad-1] !== undefined && q[checkQuad-1].img ===  true) || 
@@ -250,4 +307,41 @@ function adjImg (checkQuad) {
     return true;
   }
   return false;
+}
+
+//switches between coordinates and numbers for quads
+function quadRef(quad) {
+  //if input a number
+  if (quad[1] === undefined) {
+    return [quad%(gridWidth-1), Math.trunc(quad/(gridWidth-1))];
+  }
+  //if input quad coordinates
+  else {
+    return quad[0]+quad[1]*(gridWidth-1);
+  }
+}
+
+//generate a biome
+function biome(size, type='default') {
+  size --; //correct for the center one already being counted
+  let center = Math.round(Math.random()*q.length);
+  let centerCoords = quadRef(center);
+  // console.log(centerCoords);
+  q[center].biome = type;
+  //add some sort of randomness?
+
+  //array of coordinates for biome
+  let biome = [];
+  for (let k = 0; k < 4; k++) {
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size-i; j++) {
+        let tempQuad = quadRef([centerCoords[0]+((size-i)-j)*coordSigns[k]+biomeFixAlign[k], centerCoords[1]+j*coordSigns[k+1]+biomeFixAlign[k]]);
+        if (q[tempQuad] !== undefined) {
+          biome.push(tempQuad);
+          q[tempQuad].biome = type;
+          // drawQuad(tempQuad, 'black');
+        }
+      }
+    }
+  }
 }
