@@ -77,14 +77,14 @@ widthSlider.addEventListener('input', () => {
   widthNum.value = widthSlider.value-1;
   gridWidth = widthSlider.value;
   gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  randomGrid();
-  drawQuads();
+  // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // randomGrid();
+  // drawQuads();
 }, false);
 
 //move the images - done by quad number right now, so they move around
 //only on mouseup because it's pretty slow
-widthSlider.addEventListener('mouseup', () => {
+/* widthSlider.addEventListener('mouseup', () => {
   for (let i = 0; i < treeImgs.length; i++) {
     let re = /(?<=:)([0-9])(?=:)/g
     let quadCoords = treeImgs[i].id.match(re);
@@ -97,7 +97,7 @@ widthSlider.addEventListener('mouseup', () => {
       findImg.parentNode.removeChild(findImg);
     }
   };
-}, false);
+}, false); */
 
 /* 
 window.addEventListener('resize', () => {
@@ -110,7 +110,19 @@ window.addEventListener('resize', () => {
 function start() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
+  randomGrid(); //generate the random point grid
 
+//set up biomes in random order so either one can be on top
+if (Math.random() < 0.5) {
+  biome(4, 'swamp');
+  biome(4, 'mountain');
+}
+else {
+  biome(4, 'mountain');
+  biome(4, 'swamp');
+}
+
+drawQuads(); //draw all the quads
   if (startQuad === undefined) {
     startQuad = Math.round(Math.random()*q.length);
     quadImg(startQuad);
@@ -189,19 +201,7 @@ function drawQuads() {
   }
 }
 
-randomGrid(); //generate the random point grid
 
-//set up biomes in random order so either one can be on top
-if (Math.random() < 0.5) {
-  biome(4, 'swamp');
-  biome(4, 'mountain');
-}
-else {
-  biome(4, 'mountain');
-  biome(4, 'swamp');
-}
-
-drawQuads(); //draw all the quads
 
 
 //cross products for each side going in a circle - cross point vectors for both points that define each side
