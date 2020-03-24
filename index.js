@@ -6,6 +6,7 @@ const canvas = document.getElementById('canvas');
 
 const widthSlider = document.getElementById('widthSlider');
 const widthNum = document.getElementById('widthNum');
+const widthInput = document.getElementById('widthInput');
 let treeImgs = document.getElementsByClassName('treeimg');
 
 let screen = 'start';
@@ -15,7 +16,7 @@ let ctx = canvas.getContext('2d');
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 let points = [];
-let q = [];//array for quadrilaterals (one letter for readability, or at least that's my excuse)
+let q = []; //array for quadrilaterals (one letter for readability, or at least that's my excuse)
 const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
 
 const coordSigns = [1, 1, -1, -1, 1];
@@ -56,7 +57,7 @@ canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1)+5; //set canvas height to 
 const boxMuller = () => Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random());
 
 let clickedQuad;
-//bool for only adjacent quads or not
+//bool for only quads adjacent to quads with images or not
 let onlyAdj = true;
 //the quad you start in
 let startQuad = undefined;
@@ -74,30 +75,19 @@ backbtn.addEventListener('click', back, false);
 
 //resize the grid with the slider
 widthSlider.addEventListener('input', () => {
-  widthNum.value = widthSlider.value-1;
-  gridWidth = widthSlider.value;
+  widthNum.value = widthSlider.value-1; 
+  gridWidth = parseInt(widthSlider.value);
   gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
   // randomGrid();
   // drawQuads();
 }, false);
 
-//move the images - done by quad number right now, so they move around
-//only on mouseup because it's pretty slow
-/* widthSlider.addEventListener('mouseup', () => {
-  for (let i = 0; i < treeImgs.length; i++) {
-    let re = /(?<=:)([0-9])(?=:)/g
-    let quadCoords = treeImgs[i].id.match(re);
-    let quadNum = quadRef([parseInt(quadCoords[0]), parseInt(quadCoords[1])]); //get quad number from last two characters if image id
-    if (q[quadNum]) {
-      centerImg(quadNum, treeImgs[i]);
-    }
-    else {
-      let findImg = document.getElementById(treeImgs[i].id);
-      findImg.parentNode.removeChild(findImg);
-    }
-  };
-}, false); */
+widthNum.addEventListener('input', () => {
+  widthSlider.value = parseInt(widthNum.value)+1; 
+  gridWidth = parseInt(widthNum.value)+1;
+  gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
+}, false);
 
 /* 
 window.addEventListener('resize', () => {
@@ -112,17 +102,17 @@ function start() {
   afterStart.style.display = 'inline';
   randomGrid(); //generate the random point grid
 
-//set up biomes in random order so either one can be on top
-if (Math.random() < 0.5) {
-  biome(4, 'swamp');
-  biome(4, 'mountain');
-}
-else {
-  biome(4, 'mountain');
-  biome(4, 'swamp');
-}
+  //set up biomes in random order so either one can be on top
+  if (Math.random() < 0.5) {
+    biome(4, 'swamp');
+    biome(4, 'mountain');
+  }
+  else {
+    biome(4, 'mountain');
+    biome(4, 'swamp');
+  }
 
-drawQuads(); //draw all the quads
+  drawQuads(); //draw all the quads
   if (startQuad === undefined) {
     startQuad = Math.round(Math.random()*q.length);
     quadImg(startQuad);
@@ -138,6 +128,7 @@ drawQuads(); //draw all the quads
 function back() {
   ssbtnsdiv.style.display = '';
   afterStart.style.display = 'none';
+  widthInput.style.display = 'none';
   screen = 'start';
 }
 
@@ -146,6 +137,7 @@ function randomGrid() {
   //generate random points
   points = [];
   points.length = 0;
+  q = [];
   q.length = 0;
   for (let i = 0; i < gridHeight; i++) {
     let column = [];
@@ -200,9 +192,6 @@ function drawQuads() {
     drawQuad(i);
   }
 }
-
-
-
 
 //cross products for each side going in a circle - cross point vectors for both points that define each side
 //needs to be in a 3d coordinate system, with z being the same for all vectors
@@ -354,7 +343,7 @@ function checkAdj(centerQuad, checkQuad) {
 function adjImg (checkQuad) {
   if ((q[checkQuad+1] !== undefined && q[checkQuad+1].img ===  true) || 
       (q[checkQuad-1] !== undefined && q[checkQuad-1].img ===  true) || 
-      (q[checkQuad + (gridWidth-1)] !== undefined && q[checkQuad + gridWidth-1].img ===  true) || 
+      (q[checkQuad + gridWidth-1] !== undefined && q[checkQuad + gridWidth-1].img ===  true) || 
       (q[checkQuad - (gridWidth-1)] !== undefined && q[checkQuad - (gridWidth-1)].img ===  true)) {
     return true;
   }
