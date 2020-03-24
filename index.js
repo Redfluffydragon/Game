@@ -136,6 +136,9 @@ function back() {
 function resume() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
+  window.setTimeout(() => {
+    screen = 'game';
+  }, 100)
 }
 
 //generate a semirandom grid and sort into quadrilateral points in q array
