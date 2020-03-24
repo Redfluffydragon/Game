@@ -24,6 +24,10 @@ button {
 
 }
 
+#resumebtn{
+  display: none;
+}
+
 #Title{
   font-size: 100px;
   margin-bottom: 35px;

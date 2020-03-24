@@ -1,5 +1,6 @@
 const startbtn = document.getElementById('startbtn');
 const backbtn = document.getElementById('backbtn');
+const resumebtn = document.getElementById('resumebtn');
 const ssbtnsdiv = document.getElementById('ssbtnsdiv');
 const afterStart = document.getElementById('afterStart');
 const canvas = document.getElementById('canvas');
@@ -72,6 +73,7 @@ function gotchem(item, defalt, type=localStorage) {
 
 startbtn.addEventListener('click', start, false);
 backbtn.addEventListener('click', back, false);
+resumebtn.addEventListener('click', resume, false);
 
 //resize the grid with the slider
 widthSlider.addEventListener('input', () => {
@@ -100,6 +102,8 @@ window.addEventListener('resize', () => {
 function start() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
+  resumebtn.style.display = 'block';
+  startbtn.style.display = "none";
   randomGrid(); //generate the random point grid
 
   //set up biomes in random order so either one can be on top
@@ -113,12 +117,9 @@ function start() {
   }
 
   drawQuads(); //draw all the quads
-  if (startQuad === undefined) {
-    startQuad = Math.round(Math.random()*q.length);
-    quadImg(startQuad);
-  }
-  startbtn.textContent = 'Resume';
-  //set timeout so it doesn't add a tree under where you clicked the start button - not a good solution, but it seems to work
+  startQuad = Math.round(Math.random()*q.length);
+  quadImg(startQuad);
+  //set time out so it doesn't add a tree under where you clicked the start button - not a good solution, but it seems to work
   window.setTimeout(() => {
     screen = 'game';
   }, 100)
@@ -130,6 +131,11 @@ function back() {
   afterStart.style.display = 'none';
   widthInput.style.display = 'none';
   screen = 'start';
+}
+
+function resume() {
+  ssbtnsdiv.style.display = 'none';
+  afterStart.style.display = 'inline';
 }
 
 //generate a semirandom grid and sort into quadrilateral points in q array
