@@ -1,15 +1,14 @@
 /**
- To Do
- * Add lake
+ To do:
  * Add saplings
- * fix canvas drawing on window resize
- * 
  */
 
 const startbtn = document.getElementById('startbtn');
+const howtobtn = document.getElementById('howtobtn');
 const backbtn = document.getElementById('backbtn');
 const resumebtn = document.getElementById('resumebtn');
 const ssbtnsdiv = document.getElementById('ssbtnsdiv');
+const howtodiv = document.getElementById('howtodiv');
 const afterStart = document.getElementById('afterStart');
 const canvas = document.getElementById('canvas');
 
@@ -44,8 +43,8 @@ let biomes = {
     height: 94,
     width: 50,
   },
-  swamp: {
-    src: 'swampTreeSmall.png',
+  jungle: {
+    src: 'jungleTreeSmall.png',
     height: 53,
     width: 50,
     color: 0x1b1b1b, //this gets subtracted from the default color 
@@ -54,8 +53,15 @@ let biomes = {
     src: 'pineTreeSmall.png',
     height: 63,
     width: 50,
-  }
+  },
+  lake: {
+    src: 'mangroveTreeSmall.png',
+    height: 54,
+    width: 50,
+  },
 }
+
+let biomeKeys = Object.keys(biomes).slice(1); //remove the default biome so it doesn't generate a biome that's just the default
 
 //changes the number of points in the grid
 let gridWidth = gotchem('gridWidth', 19);
@@ -86,6 +92,7 @@ window.addEventListener('load', () => {
 }, false);
 
 startbtn.addEventListener('click', start, false);
+howtobtn.addEventListener('click', howto, false);
 backbtn.addEventListener('click', back, false);
 resumebtn.addEventListener('click', resume, false);
 
@@ -131,13 +138,12 @@ function start() {
   randomGrid(); //generate the random point grid
 
   //set up biomes in random order so either one can be on top
-  if (Math.random() < 0.5) {
-    biome(4, 'swamp');
-    biome(4, 'mountain');
+  for (let i = biomeKeys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [biomeKeys[i], biomeKeys[j]] = [biomeKeys[j], biomeKeys[i]];
   }
-  else {
-    biome(4, 'mountain');
-    biome(4, 'swamp');
+  for (let i = 0; i < biomeKeys.length; i++) {
+    biome(4, biomeKeys[i]);
   }
 
   drawQuads(); //draw all the quads
@@ -148,6 +154,11 @@ function start() {
     screen = 'game';
   }, 100)
 };
+
+function howto() {
+  ssbtnsdiv.style.display = 'none';
+  howtodiv.style.display = 'inline';
+}
 
 //go back to the starting screen
 function back() {
@@ -249,11 +260,14 @@ function canvasClick(e) {
 
 //draw one quad
 function drawQuad(i, color=q[i].color) {
-  if (q[i].biome === 'swamp') {
+  if (q[i].biome === 'jungle') {
     color = '#' + (color - biomes[q[i].biome].color).toString(16);
   }
   else if (q[i].biome === 'mountain') {
     color = '#' + q[i].shade + q[i].shade + q[i].shade;
+  }
+  else if (q[i].biome === 'lake') {
+    color = '#' + '2266' + q[i].shade;
   }
   else {
     color = '#' + color.toString(16);
@@ -380,7 +394,7 @@ function quadRef(quad) {
 //generate a biome
 function biome(size, type='default') {
   size --; //correct for the center one already being counted
-  let center = Math.round(Math.random()*q.length);
+  let center = Math.trunc(Math.random()*q.length);
   let centerCoords = quadRef(center);
   q[center].biome = type;
   //add some sort of randomness?
@@ -394,7 +408,6 @@ function biome(size, type='default') {
         if (q[tempQuad] !== undefined) {
           biome.push(tempQuad);
           q[tempQuad].biome = type;
-          // drawQuad(tempQuad, 'black');
         }
       }
     }
