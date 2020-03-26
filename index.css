@@ -9,7 +9,7 @@ body{
 button {
   background:#5dd3b5;
   cursor: pointer;
-}
+} 
 
 .ssbtns{
   width: 400px;
@@ -39,8 +39,8 @@ button {
   width: 100%;
 }
 
-#howTo{
- top: 25vh; 
+#howtodiv{
+  display: none;
 }
 
 #afterStart {
