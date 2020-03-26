@@ -1,3 +1,11 @@
+/**
+ To Do
+ * Add lake
+ * Add saplings
+ * fix canvas drawing on window resize
+ * 
+ */
+
 const startbtn = document.getElementById('startbtn');
 const backbtn = document.getElementById('backbtn');
 const resumebtn = document.getElementById('resumebtn');
@@ -9,6 +17,12 @@ const widthSlider = document.getElementById('widthSlider');
 const widthNum = document.getElementById('widthNum');
 const widthInput = document.getElementById('widthInput');
 let treeImgs = document.getElementsByClassName('treeimg');
+
+function gotchem(item, defalt, type=localStorage) {
+  let getem = type.getItem(item);
+  if (getem !== null && JSON.parse(getem) !== undefined) { return JSON.parse(getem); }
+  return defalt;
+};
 
 let screen = 'start';
 
@@ -23,17 +37,18 @@ const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
 const coordSigns = [1, 1, -1, -1, 1];
 const biomeFixAlign = [0, -1, 0, 1];
 
-//colors for each of the biomes
-let biomeColors = {
-  swamp: 0x151515, //this gets subtracted from the default color 
-}
-
-//image data for each of the trees
-let biomeTrees = {
+//data for each of the biomes (image & color)
+let biomes = {
+  default: {
+    src: 'tearTreeSmall.png',
+    height: 94,
+    width: 50,
+  },
   swamp: {
     src: 'swampTreeSmall.png',
     height: 53,
     width: 50,
+    color: 0x1b1b1b, //this gets subtracted from the default color 
   },
   mountain: {
     src: 'pineTreeSmall.png',
@@ -43,7 +58,8 @@ let biomeTrees = {
 }
 
 //changes the number of points in the grid
-let gridWidth = 19;
+let gridWidth = gotchem('gridWidth', 19);
+let maxGridWidth = 21;
 let gridHeight = 9;
 //spacing between points on the grid in pixels
 let gridSize = 75;
@@ -52,6 +68,7 @@ let imgSize = gridSize/2.2; //for sizing trees correctly
 let gridOffsetY = 50; //offset from top of canvas
 //offset from left of canvas
 let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2; //center the grid in the window
+let newOffsetX = 0;
 canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1)+5; //set canvas height to a minimum given the grid height
 
 //Box-Muller transform (turns a uniform distribution into a standard one)
@@ -62,43 +79,50 @@ let clickedQuad;
 let onlyAdj = true;
 //the quad you start in
 let startQuad = undefined;
-//the height of the image (for centering purposes)
-let imgHeight;
 
-function gotchem(item, defalt, type=localStorage) {
-  let getem = type.getItem(item);
-  if (getem !== null && JSON.parse(getem) !== undefined) { return JSON.parse(getem); }
-  return defalt;
-};
+window.addEventListener('load', () => {
+  widthNum.value = gridWidth-1;
+  widthSlider.value = gridWidth;
+}, false);
 
 startbtn.addEventListener('click', start, false);
 backbtn.addEventListener('click', back, false);
 resumebtn.addEventListener('click', resume, false);
 
-//resize the grid with the slider
+//change grid size and offsets with the slider
 widthSlider.addEventListener('input', () => {
   widthNum.value = widthSlider.value-1; 
   gridWidth = parseInt(widthSlider.value);
+  localStorage.setItem('gridWidth', JSON.stringify(gridWidth));
   gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
-  // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // randomGrid();
-  // drawQuads();
 }, false);
 
+//same with text input
 widthNum.addEventListener('input', () => {
+  if (parseInt(widthNum.value)+1 > maxGridWidth) {
+    widthNum.value = maxGridWidth-1;
+  }
   widthSlider.value = parseInt(widthNum.value)+1; 
   gridWidth = parseInt(widthNum.value)+1;
+  localStorage.setItem('gridWidth', JSON.stringify(gridWidth));
   gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
 }, false);
 
-/* 
+//resize the canvas width and move the grid side to side with window resizes
 window.addEventListener('resize', () => {
-  gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2;
+  newOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2-gridOffsetX;
   canvas.width = window.innerWidth;
   drawQuads();
+  for (let i = 0; i < treeImgs.length; i++) {
+    let re = /(?<=:)([0-9]+)(?=:)/g
+    let quadCoords = treeImgs[i].id.match(re);
+    let quadNum = quadRef([parseInt(quadCoords[0]), parseInt(quadCoords[1])]); //get quad number from last two characters if image id
+    centerImg(quadNum, treeImgs[i]);
+  }
 }, false);
- */
-//hide start screen and show canvas, set starting quad
+
+
+//hide start screen and show canvas, set starting quad, and replace start button with resume button
 function start() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
@@ -133,6 +157,7 @@ function back() {
   screen = 'start';
 }
 
+//resume the already started game
 function resume() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
@@ -188,7 +213,7 @@ function randomGrid() {
         color: color,
         img: false,
         biome: 'default',
-        grayVal: gVal,
+        shade: gVal,
       })
     }
   }
@@ -215,10 +240,8 @@ function canvasClick(e) {
   //have to do !== false because the first quad is 0
   if (clickedQuad !== false && 
     (screen === 'game' && 
-    (onlyAdj === false || 
-    (onlyAdj === true && 
-      adjImg(clickedQuad) === true)) ||
-    q[clickedQuad].img === true)) {
+    ((onlyAdj === false || (onlyAdj === true && adjImg(clickedQuad) === true)) ||
+    q[clickedQuad].img === true))) {
       drawQuads(clickedQuad);
       quadImg(clickedQuad);
   }
@@ -227,67 +250,50 @@ function canvasClick(e) {
 //draw one quad
 function drawQuad(i, color=q[i].color) {
   if (q[i].biome === 'swamp') {
-    color = '#' + (color - biomeColors[q[i].biome]).toString(16);
+    color = '#' + (color - biomes[q[i].biome].color).toString(16);
   }
   else if (q[i].biome === 'mountain') {
-    color = '#' + q[i].grayVal + q[i].grayVal + q[i].grayVal;
+    color = '#' + q[i].shade + q[i].shade + q[i].shade;
   }
   else {
     color = '#' + color.toString(16);
   }
+  //for lake: color = '#' + '2266' + q[i].shade;?
   q[i].newColor = color;
 
   ctx.fillStyle = color;
   ctx.lineWidth = 0.3;
 
   ctx.beginPath();
-  ctx.moveTo(q[i].tl.x, q[i].tl.y);
-  ctx.lineTo(q[i].tr.x, q[i].tr.y);
-  ctx.lineTo(q[i].br.x, q[i].br.y);
-  ctx.lineTo(q[i].bl.x, q[i].bl.y);
-  ctx.lineTo(q[i].tl.x, q[i].tl.y);
+  ctx.moveTo(q[i].tl.x + newOffsetX, q[i].tl.y);
+  ctx.lineTo(q[i].tr.x + newOffsetX, q[i].tr.y);
+  ctx.lineTo(q[i].br.x + newOffsetX, q[i].br.y);
+  ctx.lineTo(q[i].bl.x + newOffsetX, q[i].bl.y);
+  ctx.lineTo(q[i].tl.x + newOffsetX, q[i].tl.y);
   ctx.fill();
   ctx.stroke();
 }
 
 // center an image in a quad
-function centerImg(quad, img) {
+function centerImg(quad, img, imgHeight) {
   let centerCoords = findCenter(quad);
   img.width = imgSize;
-  img.style.left = centerCoords[0] + canvas.offsetLeft - imgSize/2 + boxMuller()*5 + 'px';
-  img.style.top = centerCoords[1] + canvas.offsetTop - ((imgHeight/50)*imgSize)/2 + boxMuller()*4 + 'px';
+  img.style.left = centerCoords[0] + canvas.offsetLeft - imgSize/2 + boxMuller()*5 + newOffsetX + 'px';
+  img.style.top = centerCoords[1] + canvas.offsetTop - ((imgHeight/50)*imgSize)/2 + boxMuller()*4 - 3 + 'px'; //-3 so the trunk doesn't stick out the bottom
 }
 
-// toggle image on a quad
-function quadImg(quad, image='default') {
+// toggle image on a quad, based on the biome of that quad
+function quadImg(quad) {
   let coords = quadRef(quad);
   if (q[quad].img == false) {
     let img = document.createElement('IMG');
-    if (image === 'default') {
-      if (q[quad].biome === 'default') {
-        img.src = 'tearTreeSmall.png';
-        imgHeight = 94;
-        /* if (Math.random() < 0.4) {
-          img.src = 'deadTreeSmall.png';
-          imgHeight = 72;
-        }
-        else {
-          img.src = 'tearTreeSmall.png';
-          imgHeight = 94;
-        } */
-      }
-      else {
-        img.src = biomeTrees[q[quad].biome].src;
-        imgHeight = biomeTrees[q[quad].biome].height;
-      }
-    }
-    else {
-      img.src = image;
-    }
+
+    img.src = biomes[q[quad].biome].src;
+
     img.classList.add('treeimg');
     img.id = `img:${coords[0]}::${coords[1]}:`; //give each one a unique id for removal
 
-    centerImg(quad, img);
+    centerImg(quad, img, biomes[q[quad].biome].height);
     afterStart.appendChild(img);
     q[quad].img = true;
   }
@@ -317,7 +323,7 @@ function checkInside(e) {
     let dotChecks = [];
     for (let i = 0; i < 4; i++) {
       tempSideVector = crossProd([q[j][corners[i]].x, q[j][corners[i]].y], [q[j][corners[i+1]].x, q[j][corners[i+1]].y]);
-      dotChecks.push(dotProd(tempSideVector, [e.clientX, e.clientY - canvas.offsetTop + window.pageYOffset, 1]));
+      dotChecks.push(dotProd(tempSideVector, [e.clientX - newOffsetX, e.clientY - canvas.offsetTop + window.pageYOffset, 1]));
     }
     if (dotChecks[0] > 0 && dotChecks[1] > 0 && dotChecks[2] > 0 && dotChecks[3] > 0) {
       //return number of the quadrilateral clicked on
@@ -350,8 +356,8 @@ function checkAdj(centerQuad, checkQuad) {
 //check if there's an image in an adjacent quad
 //wraps around side edges - not intended
 function adjImg (checkQuad) {
-  if ((q[checkQuad+1] !== undefined && q[checkQuad+1].img ===  true) || 
-      (q[checkQuad-1] !== undefined && q[checkQuad-1].img ===  true) || 
+  if ((checkQuad%(gridWidth-1)-gridWidth+2 !== 0 && q[checkQuad+1] !== undefined && q[checkQuad+1].img ===  true) || 
+      (checkQuad%(gridWidth-1) !== 0 && q[checkQuad-1] !== undefined && q[checkQuad-1].img ===  true) || 
       (q[checkQuad + gridWidth-1] !== undefined && q[checkQuad + gridWidth-1].img ===  true) || 
       (q[checkQuad - (gridWidth-1)] !== undefined && q[checkQuad - (gridWidth-1)].img ===  true)) {
     return true;
