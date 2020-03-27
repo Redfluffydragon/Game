@@ -19,6 +19,9 @@ const widthSlider = document.getElementById('widthSlider');
 const widthNum = document.getElementById('widthNum');
 const widthInput = document.getElementById('widthInput');
 const widthWarning = document.getElementById('widthWarning');
+
+const logNum = document.getElementById('logNum');
+
 let treeImgs = document.getElementsByClassName('treeimg');
 
 function gotchem(item, defalt, type=localStorage) {
@@ -55,6 +58,8 @@ const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
 //for generating biomes
 const coordSigns = [1, 1, -1, -1, 1];
 const biomeFixAlign = [0, -1, 0, 1];
+
+let logs = 0;
 
 //data for each of the biomes (image, color & seed t/f)
 let biomes = {
@@ -172,7 +177,7 @@ function start() {
     startQuad = Math.round(Math.random()*quads.length);
   }
   while (quads[startQuad].biome !== 'default');
-  quadImg(startQuad);
+  quadImg(startQuad, 'tree');
   //set time out so it doesn't add a tree under where you clicked the start button - not a good solution, but it seems to work
   window.setTimeout(() => {
     screen = 'game';
@@ -248,7 +253,7 @@ function randomGrid() {
           y: points[i][j+1].y
         },
         color: color,
-        img: false,
+        tree: false,
         biome: 'default',
         shade: gVal,
       })
@@ -272,7 +277,7 @@ function canvasClick(e) {
   if (clickedQuad !== false && 
     screen === 'game' && 
     biomes[quads[clickedQuad].biome].seed === true &&
-    (adjQuad(clickedQuad, 'img', true) === true || quads[clickedQuad].img === true)) {
+    (adjQuad(clickedQuad, 'tree', 'tree') === true || quads[clickedQuad].tree !== false)) {
       quadImg(clickedQuad);
   }
 }
@@ -316,28 +321,48 @@ function centerImg(quad, img, imgHeight) {
 }
 
 // toggle image on a quad, based on the biome of that quad
-function quadImg(quad) {
+function quadImg(quad, treeState='sapling') {
   let coords = quadRef(quad);
-  if (quads[quad].img == false) {
+  if (quads[quad].tree === false) {
     let img = document.createElement('IMG');
 
-    img.src = biomes[quads[quad].biome].src;
+    if (treeState === 'sapling') {
+      treeGrowth(quad);
+      img.src = 'saplingSmall.png';
+    }
+    else if (treeState === 'tree') {
+      treeNum++;
+      img.src = biomes[quads[quad].biome].src;
+    }
 
     img.classList.add('treeimg');
     img.id = `img:${coords[0]}::${coords[1]}:`; //give each one a unique id for removal
 
     centerImg(quad, img, biomes[quads[quad].biome].height);
     afterStart.appendChild(img);
-    quads[quad].img = true;
-
-    treeNum++;
+    quads[quad].tree = treeState;
   }
-  else if (quads[quad].img === true && treeNum > 1) {
+  else if (quads[quad].tree === 'tree' && treeNum > 1) {
     let findImg = document.getElementById(`img:${coords[0]}::${coords[1]}:`);
     findImg.parentNode.removeChild(findImg);
-    quads[quad].img = false;
+    if (quads[quad].tree === 'tree') {
+      logs ++;
+      logNum.textContent = logs;
+    }
+    quads[quad].tree = false;
     treeNum--;
   }
+}
+
+//grow a sapling into a tree
+function treeGrowth(quad) {
+  window.setTimeout(() => {
+    quads[quad].tree = 'tree';
+    treeNum++;
+    let coords = quadRef(quad);
+    let findImg = document.getElementById(`img:${coords[0]}::${coords[1]}:`);
+    findImg.src = biomes[quads[quad].biome].src;
+  }, 4000 + Math.trunc(Math.random()*2000));
 }
 
 //check if a click on the canvas is inside a quadrilateral, and if so, which one
