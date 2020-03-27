@@ -1,6 +1,9 @@
 /**
  To do:
- * Add saplings
+ * Add saplings - setTimeout for them growing up? (how performant is that, and how much does it matter?)
+   * can't plant more trees next to a sapling, only full grown trees
+ * Add seeds that you aquire somehow, that you can't plant trees of different types without the right seeds
+ * make sure you only start on the default biome?
  */
 
 const startbtn = document.getElementById('startbtn');
@@ -15,14 +18,17 @@ const canvas = document.getElementById('canvas');
 const widthSlider = document.getElementById('widthSlider');
 const widthNum = document.getElementById('widthNum');
 const widthInput = document.getElementById('widthInput');
+const widthWarning = document.getElementById('widthWarning');
 let treeImgs = document.getElementsByClassName('treeimg');
 
 function gotchem(item, defalt, type=localStorage) {
   let getem = type.getItem(item);
-  if (getem !== null && JSON.parse(getem) !== undefined) { return JSON.parse(getem); }
+  let parsem = JSON.parse(getem);
+  if (getem !== null && parsem !== undefined) return parsem;
   return defalt;
 };
 
+//for the canvasclick function so it doesn't do anything while not on the game screen
 let screen = 'start';
 
 canvas.width = window.innerWidth; //set canvas to width of window
@@ -128,7 +134,6 @@ window.addEventListener('resize', () => {
   }
 }, false);
 
-
 //hide start screen and show canvas, set starting quad, and replace start button with resume button
 function start() {
   ssbtnsdiv.style.display = 'none';
@@ -165,6 +170,7 @@ function back() {
   ssbtnsdiv.style.display = '';
   afterStart.style.display = 'none';
   widthInput.style.display = 'none';
+  widthWarning.style.display = 'none';
   screen = 'start';
 }
 
@@ -251,7 +257,7 @@ function canvasClick(e) {
   //have to do !== false because the first quad is 0
   if (clickedQuad !== false && 
     (screen === 'game' && 
-    ((onlyAdj === false || (onlyAdj === true && adjImg(clickedQuad) === true)) ||
+    ((onlyAdj === false || (onlyAdj === true && adjQuad(clickedQuad, 'img', true) === true)) ||
     q[clickedQuad].img === true))) {
       drawQuads(clickedQuad);
       quadImg(clickedQuad);
@@ -367,13 +373,12 @@ function checkAdj(centerQuad, checkQuad) {
   return false;
 }
  
-//check if there's an image in an adjacent quad
-//wraps around side edges - not intended
-function adjImg (checkQuad) {
-  if ((checkQuad%(gridWidth-1)-gridWidth+2 !== 0 && q[checkQuad+1] !== undefined && q[checkQuad+1].img ===  true) || 
-      (checkQuad%(gridWidth-1) !== 0 && q[checkQuad-1] !== undefined && q[checkQuad-1].img ===  true) || 
-      (q[checkQuad + gridWidth-1] !== undefined && q[checkQuad + gridWidth-1].img ===  true) || 
-      (q[checkQuad - (gridWidth-1)] !== undefined && q[checkQuad - (gridWidth-1)].img ===  true)) {
+//check if there is an adjacent quad with the specified property being the specified value 
+function adjQuad (checkQuad, prop, val) {
+  if ((checkQuad%(gridWidth-1)-gridWidth+2 !== 0 && q[checkQuad+1] !== undefined && q[checkQuad+1][prop] === val) || 
+      (checkQuad%(gridWidth-1) !== 0 && q[checkQuad-1] !== undefined && q[checkQuad-1][prop] ===  val) || 
+      (q[checkQuad + gridWidth-1] !== undefined && q[checkQuad + gridWidth-1][prop] ===  val) || 
+      (q[checkQuad - (gridWidth-1)] !== undefined && q[checkQuad - (gridWidth-1)][prop] ===  val)) {
     return true;
   }
   return false;
@@ -392,12 +397,18 @@ function quadRef(quad) {
 }
 
 //generate a biome
-function biome(size, type='default') {
-  size --; //correct for the center one already being counted
-  let center = Math.trunc(Math.random()*q.length);
+function biome(size, type) {
+  size --; //correct for the center one already being counted - size is the radius in quads
+  let center;
+  //do while loop to make sure the biomes don't generate on top of or right next to each other
+  do {
+    center = Math.trunc(Math.random()*q.length);
+  }
+  while (q[center].biome !== 'default' || !adjQuad(center, 'biome', 'default'));
+
   let centerCoords = quadRef(center);
   q[center].biome = type;
-  //add some sort of randomness?
+  //add some sort of randomness to the biome shape?
 
   //array of coordinates for biome
   let biome = [];
