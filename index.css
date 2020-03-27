@@ -50,6 +50,11 @@ button {
 
 #afterStart {
   display: none;
+  font-size: calc(1vmax + 12px);
+}
+
+#afterStart p {
+  margin-top: 0;
 }
 
 #backbtn{
