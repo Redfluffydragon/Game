@@ -3,7 +3,7 @@
  * Add saplings - setTimeout for them growing up? (how performant is that, and how much does it matter?)
    * can't plant more trees next to a sapling, only full grown trees
  * Add seeds that you aquire somehow, that you can't plant trees of different types without the right seeds
- * make sure you only start on the default biome?
+ *   - store?
  */
 
 const startbtn = document.getElementById('startbtn');
@@ -28,6 +28,19 @@ function gotchem(item, defalt, type=localStorage) {
   return defalt;
 };
 
+//returns v1 cross v2 for 3D vectors
+//use 1 for the z term in all vectors - needed to make this work, not sure how it works
+const crossProd = (v1, v2) => [v1[1] - v2[1], v2[0] - v1[0], v1[0]*v2[1] - v1[1]*v2[0]];
+
+//returns v1 dot v2
+const dotProd = (v1, v2) => v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+
+//maps a value from one range to another (taken from arduino map function)
+const mapVal = (val, fromLow, fromHigh, toLow, toHigh) => (val - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
+
+//Box-Muller transform (turns a uniform distribution into a standard one)
+const boxMuller = () => Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random());
+
 //for the canvasclick function so it doesn't do anything while not on the game screen
 let screen = 'start';
 
@@ -36,38 +49,45 @@ let ctx = canvas.getContext('2d');
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 let points = [];
-let q = []; //array for quadrilaterals (one letter for readability, or at least that's my excuse)
+let quads = []; //array for quadrilaterals (one letter for readability, or at least that's my excuse)
 const corners = ['tl', 'tr', 'br', 'bl', 'tl'];
 
+//for generating biomes
 const coordSigns = [1, 1, -1, -1, 1];
 const biomeFixAlign = [0, -1, 0, 1];
 
-//data for each of the biomes (image & color)
+//data for each of the biomes (image, color & seed t/f)
 let biomes = {
   default: {
     src: 'tearTreeSmall.png',
     height: 94,
     width: 50,
+    seed: true,
   },
   jungle: {
     src: 'jungleTreeSmall.png',
     height: 53,
     width: 50,
-    color: 0x1b1b1b, //this gets subtracted from the default color 
+    color: 0x1b1b1b, //this gets subtracted from the default color
+    seed: false,
   },
   mountain: {
     src: 'pineTreeSmall.png',
     height: 63,
     width: 50,
+    seed: false,
   },
-  lake: {
+  swamp: {
     src: 'mangroveTreeSmall.png',
     height: 54,
     width: 50,
+    seed: false,
   },
 }
-
 let biomeKeys = Object.keys(biomes).slice(1); //remove the default biome so it doesn't generate a biome that's just the default
+
+//variable for blind counting of trees
+let treeNum = 0;
 
 //changes the number of points in the grid
 let gridWidth = gotchem('gridWidth', 19);
@@ -82,15 +102,6 @@ let gridOffsetY = 50; //offset from top of canvas
 let gridOffsetX = (window.innerWidth-(gridSize*(gridWidth-1)))/2; //center the grid in the window
 let newOffsetX = 0;
 canvas.height = 2*gridOffsetY+gridSize*(gridHeight-1)+5; //set canvas height to a minimum given the grid height
-
-//Box-Muller transform (turns a uniform distribution into a standard one)
-const boxMuller = () => Math.sqrt(-2*Math.log(Math.random()))*Math.sin(Math.PI*2*Math.random());
-
-let clickedQuad;
-//bool for only quads adjacent to quads with images or not
-let onlyAdj = true;
-//the quad you start in
-let startQuad = undefined;
 
 window.addEventListener('load', () => {
   widthNum.value = gridWidth-1;
@@ -134,6 +145,8 @@ window.addEventListener('resize', () => {
   }
 }, false);
 
+document.addEventListener('click', canvasClick, false);
+
 //hide start screen and show canvas, set starting quad, and replace start button with resume button
 function start() {
   ssbtnsdiv.style.display = 'none';
@@ -152,7 +165,13 @@ function start() {
   }
 
   drawQuads(); //draw all the quads
-  startQuad = Math.round(Math.random()*q.length);
+
+  //Put a tree on a random quad so you can put trees in
+  let startQuad;
+  do {
+    startQuad = Math.round(Math.random()*quads.length);
+  }
+  while (quads[startQuad].biome !== 'default');
   quadImg(startQuad);
   //set time out so it doesn't add a tree under where you clicked the start button - not a good solution, but it seems to work
   window.setTimeout(() => {
@@ -183,13 +202,13 @@ function resume() {
   }, 100)
 }
 
-//generate a semirandom grid and sort into quadrilateral points in q array
+//generate a semirandom grid and sort into quadrilateral points in quads array
 function randomGrid() {
   //generate random points
   points = [];
   points.length = 0;
-  q = [];
-  q.length = 0;
+  quads = [];
+  quads.length = 0;
   for (let i = 0; i < gridHeight; i++) {
     let column = [];
     for (let j = 0; j < gridWidth; j++) {
@@ -206,11 +225,12 @@ function randomGrid() {
   //sort and push into quadrilaterals array
   for (let i = 0; i < gridHeight-1; i++) {
     for (let j = 0; j < gridWidth-1; j++) {
-
-      let gVal = Math.min(((((i+1)*(j+1))/2+20)*4), 255).toString(16); //limit color value to 255 (otherwise it won't go back to that color, but it will go there in the first place for some reason)
+      let maxGVal = ((((gridHeight-1)*(gridWidth-1))/2+20)*4);
+      let gVal = Math.trunc(mapVal(((((i+1)*(j+1))/2+20)*4), 82, maxGVal, 75, 255)).toString(16); //map so it doesn't max out near the bottom right of the grid
       let color = parseInt(33+gVal+33, 16);
+
       //add each to quadrilaterals array
-      q.push({
+      quads.push({
         tl: {
           x: points[i][j].x, 
           y: points[i][j].y
@@ -236,60 +256,53 @@ function randomGrid() {
   }
 };
 
-//go through q array and draw all quads
+//go through quads array and draw all quads
 function drawQuads() {
   //draw all the quadrilaterals
-  for (let i = 0; i < q.length; i++) {
+  for (let i = 0; i < quads.length; i++) {
     drawQuad(i);
   }
 }
 
-//cross products for each side going in a circle - cross point vectors for both points that define each side
-//needs to be in a 3d coordinate system, with z being the same for all vectors
-//if the cross products are taken going clockwise, in a right-hand coordinate system, if the dot product of a given point vector with each of the line vectors for each of the sides is negative, that point is inside the polygon
-//the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
-
-document.addEventListener('click', canvasClick, false);
-
 //handle clicks on the canvas
 function canvasClick(e) {
+  let clickedQuad;
   clickedQuad = checkInside(e);
   //have to do !== false because the first quad is 0
   if (clickedQuad !== false && 
-    (screen === 'game' && 
-    ((onlyAdj === false || (onlyAdj === true && adjQuad(clickedQuad, 'img', true) === true)) ||
-    q[clickedQuad].img === true))) {
-      drawQuads(clickedQuad);
+    screen === 'game' && 
+    biomes[quads[clickedQuad].biome].seed === true &&
+    (adjQuad(clickedQuad, 'img', true) === true || quads[clickedQuad].img === true)) {
       quadImg(clickedQuad);
   }
 }
 
 //draw one quad
-function drawQuad(i, color=q[i].color) {
-  if (q[i].biome === 'jungle') {
-    color = '#' + (color - biomes[q[i].biome].color).toString(16);
+function drawQuad(i, color=quads[i].color) {
+  if (quads[i].biome === 'jungle') {
+    color = '#' + (color - biomes[quads[i].biome].color).toString(16);
   }
-  else if (q[i].biome === 'mountain') {
-    color = '#' + q[i].shade + q[i].shade + q[i].shade;
+  else if (quads[i].biome === 'mountain') {
+    color = '#' + quads[i].shade + quads[i].shade + quads[i].shade;
   }
-  else if (q[i].biome === 'lake') {
-    color = '#' + '2266' + q[i].shade;
+  else if (quads[i].biome === 'swamp') {
+    let bVal = Math.trunc(mapVal(parseInt(quads[i].shade, 16), 82, 255, 80, 150)).toString(16);
+    color = '#' + '2266' + bVal;
   }
   else {
     color = '#' + color.toString(16);
   }
-  //for lake: color = '#' + '2266' + q[i].shade;?
-  q[i].newColor = color;
+  quads[i].newColor = color;
 
   ctx.fillStyle = color;
   ctx.lineWidth = 0.3;
 
   ctx.beginPath();
-  ctx.moveTo(q[i].tl.x + newOffsetX, q[i].tl.y);
-  ctx.lineTo(q[i].tr.x + newOffsetX, q[i].tr.y);
-  ctx.lineTo(q[i].br.x + newOffsetX, q[i].br.y);
-  ctx.lineTo(q[i].bl.x + newOffsetX, q[i].bl.y);
-  ctx.lineTo(q[i].tl.x + newOffsetX, q[i].tl.y);
+  ctx.moveTo(quads[i].tl.x + newOffsetX, quads[i].tl.y);
+  ctx.lineTo(quads[i].tr.x + newOffsetX, quads[i].tr.y);
+  ctx.lineTo(quads[i].br.x + newOffsetX, quads[i].br.y);
+  ctx.lineTo(quads[i].bl.x + newOffsetX, quads[i].bl.y);
+  ctx.lineTo(quads[i].tl.x + newOffsetX, quads[i].tl.y);
   ctx.fill();
   ctx.stroke();
 }
@@ -305,44 +318,41 @@ function centerImg(quad, img, imgHeight) {
 // toggle image on a quad, based on the biome of that quad
 function quadImg(quad) {
   let coords = quadRef(quad);
-  if (q[quad].img == false) {
+  if (quads[quad].img == false) {
     let img = document.createElement('IMG');
 
-    img.src = biomes[q[quad].biome].src;
+    img.src = biomes[quads[quad].biome].src;
 
     img.classList.add('treeimg');
     img.id = `img:${coords[0]}::${coords[1]}:`; //give each one a unique id for removal
 
-    centerImg(quad, img, biomes[q[quad].biome].height);
+    centerImg(quad, img, biomes[quads[quad].biome].height);
     afterStart.appendChild(img);
-    q[quad].img = true;
+    quads[quad].img = true;
+
+    treeNum++;
   }
-  else if (q[quad].img === true) {
+  else if (quads[quad].img === true && treeNum > 1) {
     let findImg = document.getElementById(`img:${coords[0]}::${coords[1]}:`);
     findImg.parentNode.removeChild(findImg);
-    q[quad].img = false;
+    quads[quad].img = false;
+    treeNum--;
   }
-}
-
-//returns v1 cross v2
-function crossProd(v1, v2) {
-  //use 1 for the z term in all vectors - needed to make this work, not sure how it works
-  return[v1[1] - v2[1], v2[0] - v1[0], v1[0]*v2[1] - v1[1]*v2[0]];
-}
-
-//returns v1 dot v2
-function dotProd(v1, v2) {
-  return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 }
 
 //check if a click on the canvas is inside a quadrilateral, and if so, which one
 function checkInside(e) {
+  //cross products for each side going in a circle - cross point vectors for both points that define each side
+  //needs to be in a 3d coordinate system, with z being the same for all vectors
+  //if the cross products are taken going clockwise, in a right-hand coordinate system, if the dot product of a given point vector with each of the line vectors for each of the sides is negative, that point is inside the polygon
+  //the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
+
   let tempSideVector;
 
-  for (let j = 0; j < q.length; j++) {
+  for (let j = 0; j < quads.length; j++) {
     let dotChecks = [];
     for (let i = 0; i < 4; i++) {
-      tempSideVector = crossProd([q[j][corners[i]].x, q[j][corners[i]].y], [q[j][corners[i+1]].x, q[j][corners[i+1]].y]);
+      tempSideVector = crossProd([quads[j][corners[i]].x, quads[j][corners[i]].y], [quads[j][corners[i+1]].x, quads[j][corners[i+1]].y]);
       dotChecks.push(dotProd(tempSideVector, [e.clientX - newOffsetX, e.clientY - canvas.offsetTop + window.pageYOffset, 1]));
     }
     if (dotChecks[0] > 0 && dotChecks[1] > 0 && dotChecks[2] > 0 && dotChecks[3] > 0) {
@@ -357,8 +367,8 @@ function checkInside(e) {
 
 //return canvas coordinates of the center of a quad
 function findCenter(quad) {
-  let avgY = (q[quad].tl.y + q[quad].tr.y + q[quad].br.y + q[quad].bl.y)/4;
-  let avgX = (q[quad].tl.x + q[quad].tr.x + q[quad].br.x + q[quad].bl.x)/4;
+  let avgY = (quads[quad].tl.y + quads[quad].tr.y + quads[quad].br.y + quads[quad].bl.y)/4;
+  let avgX = (quads[quad].tl.x + quads[quad].tr.x + quads[quad].br.x + quads[quad].bl.x)/4;
   return [avgX, avgY];
 }
 
@@ -375,10 +385,10 @@ function checkAdj(centerQuad, checkQuad) {
  
 //check if there is an adjacent quad with the specified property being the specified value 
 function adjQuad (checkQuad, prop, val) {
-  if ((checkQuad%(gridWidth-1)-gridWidth+2 !== 0 && q[checkQuad+1] !== undefined && q[checkQuad+1][prop] === val) || 
-      (checkQuad%(gridWidth-1) !== 0 && q[checkQuad-1] !== undefined && q[checkQuad-1][prop] ===  val) || 
-      (q[checkQuad + gridWidth-1] !== undefined && q[checkQuad + gridWidth-1][prop] ===  val) || 
-      (q[checkQuad - (gridWidth-1)] !== undefined && q[checkQuad - (gridWidth-1)][prop] ===  val)) {
+  if ((checkQuad%(gridWidth-1)-gridWidth+2 !== 0 && quads[checkQuad+1] !== undefined && quads[checkQuad+1][prop] === val) || 
+      (checkQuad%(gridWidth-1) !== 0 && quads[checkQuad-1] !== undefined && quads[checkQuad-1][prop] ===  val) || 
+      (quads[checkQuad + gridWidth-1] !== undefined && quads[checkQuad + gridWidth-1][prop] ===  val) || 
+      (quads[checkQuad - (gridWidth-1)] !== undefined && quads[checkQuad - (gridWidth-1)][prop] ===  val)) {
     return true;
   }
   return false;
@@ -402,12 +412,12 @@ function biome(size, type) {
   let center;
   //do while loop to make sure the biomes don't generate on top of or right next to each other
   do {
-    center = Math.trunc(Math.random()*q.length);
+    center = Math.trunc(Math.random()*quads.length);
   }
-  while (q[center].biome !== 'default' || !adjQuad(center, 'biome', 'default'));
+  while (quads[center].biome !== 'default' || !adjQuad(center, 'biome', 'default'));
 
   let centerCoords = quadRef(center);
-  q[center].biome = type;
+  quads[center].biome = type;
   //add some sort of randomness to the biome shape?
 
   //array of coordinates for biome
@@ -416,9 +426,9 @@ function biome(size, type) {
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size-i; j++) {
         let tempQuad = quadRef([centerCoords[0]+((size-i)-j)*coordSigns[k]+biomeFixAlign[k], centerCoords[1]+j*coordSigns[k+1]+biomeFixAlign[k]]);
-        if (q[tempQuad] !== undefined) {
+        if (quads[tempQuad] !== undefined) {
           biome.push(tempQuad);
-          q[tempQuad].biome = type;
+          quads[tempQuad].biome = type;
         }
       }
     }
