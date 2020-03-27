@@ -1,4 +1,4 @@
-body{
+body {
   background-color: #ff8800;
   text-align: center;
   width: 100%;
@@ -11,7 +11,7 @@ button {
   cursor: pointer;
 } 
 
-.ssbtns{
+.ssbtns {
   width: 400px;
   display: block;
   margin: auto;
@@ -21,11 +21,11 @@ button {
   color: #381d69;
 }
 
-#resumebtn{
+#resumebtn {
   display: none;
 }
 
-#Title{
+#Title {
   font-size: 100px;
   margin-bottom: 35px;
   margin-top: 25px;
@@ -37,9 +37,14 @@ button {
 #ssbtnsdiv{
   position: absolute;
   width: 100%;
+  font-family: fantasy;
 }
 
-#howtodiv{
+#ssbtnsdiv p {
+  font-size: calc(0.4vmax + 12px);
+}
+
+#howtodiv {
   display: none;
 }
 
