@@ -13,25 +13,34 @@
       <button id="resumebtn" class="ssbtns">Resume</button>
       <button id="howtobtn" class="ssbtns">How to</button>
       <label id="widthInput">Width: 
-        <input type="number" id="widthNum" value="18" min="1" max="20">
-        <input type="range" min="2" max="21" value="19" class="slider" id="widthSlider">
+        <input type="number" id="widthNum" value="18" min="6" max="20">
+        <input type="range" min="7" max="21" value="19" class="slider" id="widthSlider">
       </label>
       <p id="widthWarning">(You can only adjust the width before you start)</p>
     </div>
 
     <div id="howtodiv">
       <h1>How to</h1>
-      <p>click on a square to plant a tree, as long as it is next to another tree.</p>
+      <p>click on a quadrilateral to plant a tree. You can only plant trees next to another tree or a sapling.</p>
     </div>
 
     <div id="afterStart">
       <canvas id="canvas" width="800" height="570"></canvas>
-      <button id="backbtn">Back</button>
-      <p>Logs: <span id="logNum">0</span></p>
+      <p class="counter">Logs: <span id="logNum">0</span></p> 
+      &ensp;
+      <div id="treebtns" class="inline">
+        <p id="seedLabel" class="counter">Seeds:</p>
+        <p id="defaultSeeds" class="counter">Default: <span id="defaultSeedCount">4</span></p>
+        <button id="mangrovebtn" class="treebtn">Mangrove</button>
+        <p id="mangroveSeeds" class="seedCounter counter">Mangrove: <span id="mangroveSeedCount">1</span></p>
+        <button id="kapokbtn" class="treebtn">Kapok</button>
+        <p id="kapokSeeds" class="seedCounter counter">Kapok: <span id="kapokSeedCount">1</span></p>
+        <button id="pinebtn" class="treebtn">Pine</button>
+        <p id="pineSeeds" class="seedCounter counter">Pine: <span id="pineSeedCount">1</span></p>
+        <p class="counter">Price: <span id="priceDisplay">50</span> logs</p>
+      </div>
       <h1 id="why">Why are you looking down here? Play the game!</h1>
     </div>
-
-    <div id="howtobtn">
-    </div>
+    <button id="backbtn">Back</button>
   </body>
 </html>
