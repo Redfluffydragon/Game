@@ -2,6 +2,8 @@
  To do:
  */
 
+"use strict"
+
 const startbtn = document.getElementById('startbtn');
 const howtobtn = document.getElementById('howtobtn');
 const backbtn = document.getElementById('backbtn');
@@ -30,7 +32,7 @@ function gotchem(item, defalt, type=localStorage) {
 };
 
 //returns v1 cross v2 for 3D vectors
-//use 1 for the z term in all vectors - needed to make this work, not sure how it works
+//use 1 for the z term in all vectors - needed to make the checkInside thing work, not sure how it works
 const crossProd = (v1, v2) => [v1[1] - v2[1], v2[0] - v1[0], v1[0]*v2[1] - v1[1]*v2[0]];
 
 //returns v1 dot v2
@@ -60,42 +62,87 @@ const biomeFixAlign = [0, -1, 0, 1];
 let logs = 0;
 let price = 50;
 
+let win = false;
+
+class Biome {
+  constructor(tree, src, height, width, seeds, seedCounter) {
+    this.tree = tree
+    this.src = src;
+    this.height = height;
+    this.width = width;
+    this.seeds = seeds;
+    this.seedCounter = document.getElementById(seedCounter);
+  }
+
+  buySeeds() {
+    this.seeds ++;
+    logs -= price;
+    price += 50;
+    priceDisplay.textContent = price;
+    logNum.textContent = logs;
+  }
+
+  updateSeedCount(val) {
+    this.seeds += val;
+    this.seedCounter.textContent = this.seeds;
+  }
+}
+
 //data for each of the biomes (image, color & amount of seeds)
-let biomes = {
-  default: {
-    src: 'tearTreeSmall.png',
-    height: 94,
-    width: 50,
-    seeds: 4,
-    seedCounter: document.getElementById('defaultSeedCount'),
-  },
-  jungle: {
-    tree: 'kapok',
-    src: 'jungleTreeSmall.png',
-    height: 53,
-    width: 50,
-    color: 0x1b1b1b, //this gets subtracted from the default color
-    seeds: 0,
-    seedCounter: document.getElementById('kapokSeedCount'),
-  },
-  mountain: {
-    tree: 'pine',
-    src: 'pineTreeSmall.png',
-    height: 63,
-    width: 50,
-    seeds: 0,
-    seedCounter: document.getElementById('pineSeedCount'),
-  },
-  swamp: {
-    tree: 'mangrove',
-    src: 'mangroveTreeSmall.png',
-    height: 50,
-    width: 50,
-    seeds: 0,
-    seedCounter: document.getElementById('mangroveSeedCount'),
-  },
+const biomes = {
+  default: new Biome ('default', 'tearTreeSmall.png', 94, 50, 5, 'defaultSeedCount'),
+  jungle: new Biome ('kapok', 'jungleTreeSmall.png', 53, 50, 0, 'kapokSeedCount'),
+  mountain: new Biome ('pine', 'pineTreeSmall.png', 63, 50, 0, 'pineSeedCount'),
+  swamp: new Biome ('mangrove', 'mangroveTreeSmall.png', 50, 50, 0, 'mangroveSeedCount'),
 }
 let biomeKeys = Object.keys(biomes).slice(1); //remove the default biome so it doesn't generate a biome that's just the default, and because you can't but default seeds
+
+class Quad {
+  constructor(tl, tr, br, bl, shade, color, biome, tree, quadNum) {
+    this.tl = {x: tl.x, y: tl.y};
+    this.tr = {x: tr.x, y: tr.y};
+    this.br = {x: br.x, y: br.y};
+    this.bl = {x: bl.x, y: bl.y};
+    this.shade = shade;
+    this.color = color;
+    this.biome = biome;
+    this.tree = tree;
+    this.quadNum = quadNum;
+    this.img = undefined; //for readability, just set up img for later
+  }
+
+  updateTree(startTree=false) {
+    if (this.tree === 'none' && biomes[this.biome].seeds > 0) {
+      treeNum++;
+      let img = document.createElement('IMG');
+      img.src = 'saplingSmall.png';
+      biomes[this.biome].updateSeedCount(-1);
+      
+      img.id = `img${this.quadNum}`;
+      img.classList.add('treeimg'); //set the position to absolute
+
+      centerImg(this.quadNum, img, biomes[this.biome].height);
+      afterStart.appendChild(img);
+      this.img = img;
+      this.tree = 'sapling';
+      
+      //start growth timeout
+      let timeout = startTree ? 0 : 4000 + Math.trunc(Math.random()*2000); //zero for the starting tree so you start with a full grown tree
+      window.setTimeout(() => {
+        this.tree = 'tree';
+        this.img.src = biomes[this.biome].src;
+      }, timeout);
+    }
+    else if (this.tree === 'tree' && treeNum > 1) {
+      this.img.parentNode.removeChild(this.img);
+      logs ++;
+      logNum.textContent = logs;
+      biomes[this.biome].updateSeedCount(Math.random() > 0.25 ? 1 : 2); //I think this gives about a 25% chance of getting two seeds
+      this.tree = 'none';
+      treeNum--;
+    }
+  }
+}
 
 //variable for blind counting of trees
 let treeNum = 0;
@@ -150,9 +197,7 @@ window.addEventListener('resize', () => {
   canvas.width = window.innerWidth;
   drawQuads();
   for (let i = 0; i < treeImgs.length; i++) {
-    let re = /(?<=:)([0-9]+)(?=:)/g
-    let quadCoords = treeImgs[i].id.match(re);
-    let quadNum = quadRef([parseInt(quadCoords[0]), parseInt(quadCoords[1])]); //get quad number from last two characters if image id
+    let quadNum = parseInt(treeImgs[i].id.slice(treeImgs[i].id.indexOf('g')+1)); //remove the 'img' from the id to just get the quad number
     centerImg(quadNum, treeImgs[i]);
   }
 }, false);
@@ -177,7 +222,7 @@ function start() {
     [biomeKeys[i], biomeKeys[j]] = [biomeKeys[j], biomeKeys[i]];
   }
   for (let i = 0; i < biomeKeys.length; i++) {
-    biome(4, biomeKeys[i]);
+    makeBiome(4, biomeKeys[i]);
   }
 
   drawQuads(); //draw all the quads
@@ -186,16 +231,16 @@ function start() {
   let startQuad;
   do {
     startQuad = Math.trunc(Math.random()*quads.length);
-    console.log(!adjQuad(startQuad, 'biome', 'default'));
   }
   while (quads[startQuad].biome !== 'default' && !adjQuad(startQuad, 'biome', 'default'));
-  quadImg(startQuad, 'tree');
+  quads[startQuad].updateTree(true);
   //set time out so it doesn't add a tree under where you clicked the start button - not a good solution, but it seems to work
   window.setTimeout(() => {
     screen = 'game';
   }, 100)
 };
 
+//go to the how to screen
 function howto() {
   ssbtnsdiv.style.display = 'none';
   howtodiv.style.display = 'inline';
@@ -221,16 +266,13 @@ function resume() {
   }, 100)
 }
 
+//buy seeds
 function buySeeds(e) {
   if (logs >= price && e.target.matches('button')) {
     for (let i = 0; i < biomeKeys.length; i++) {
-      let tempTree = e.target.id.slice(0, e.target.id.indexOf('b'));
+      let tempTree = e.target.id.slice(0, e.target.id.indexOf('b')); //remove "btn" from the end of the id to get just the tree
       if (biomes[biomeKeys[i]].tree === tempTree) {
-        biomes[[biomeKeys[i]]].seeds = 1;
-        logs -= price;
-        price += 50;
-        priceDisplay.textContent = price;
-        logNum.textContent = logs;
+        biomes[[biomeKeys[i]]].buySeeds();
         e.target.style.display = 'none';
         document.getElementById(tempTree + 'Seeds').style.display = 'inline';
       }
@@ -241,10 +283,8 @@ function buySeeds(e) {
 //generate a semirandom grid and sort into quadrilateral points in quads array
 function randomGrid() {
   //generate random points
-  points = [];
-  points.length = 0;
-  quads = [];
-  quads.length = 0;
+  // points.length = 0;
+  // quads.length = 0;
   for (let i = 0; i < gridHeight; i++) {
     let column = [];
     for (let j = 0; j < gridWidth; j++) {
@@ -261,33 +301,12 @@ function randomGrid() {
   //sort and push into quadrilaterals array
   for (let i = 0; i < gridHeight-1; i++) {
     for (let j = 0; j < gridWidth-1; j++) {
-      let maxGVal = ((((gridHeight-1)*(gridWidth-1))/2+20)*4);
-      let gVal = Math.trunc(mapVal(((((i+1)*(j+1))/2+20)*4), 82, maxGVal, 75, 255)).toString(16); //map so it doesn't max out near the bottom right of the grid
-      let color = parseInt(33+gVal+33, 16);
+      let maxGVal = ((((gridHeight-1)*(gridWidth-1))/2+20)*4); //calculate the maximum of the gVal formula (below) for mapping
+      let gVal = Math.trunc(mapVal((((i+1)*(j+1)/2+20)*4), 82, maxGVal, 75, 255)).toString(16); //map so it doesn't max out near the bottom right of the grid
+      let color = parseInt(33+gVal+33, 16); //starting green color
 
       //add each to quadrilaterals array
-      quads.push({
-        tl: {
-          x: points[i][j].x, 
-          y: points[i][j].y
-        },
-        bl: {
-          x: points[i+1][j].x, 
-          y: points[i+1][j].y
-        },
-        br: {
-          x: points[i+1][j+1].x, 
-          y: points[i+1][j+1].y
-        },
-        tr: {
-          x: points[i][j+1].x, 
-          y: points[i][j+1].y
-        },
-        color: color,
-        tree: false,
-        biome: 'default',
-        shade: gVal,
-      })
+      quads.push(new Quad(points[i][j], points[i+1][j], points[i+1][j+1], points[i][j+1], gVal, color, 'default', 'none', quads.length));
     }
   }
 };
@@ -305,20 +324,22 @@ function canvasClick(e) {
   let clickedQuad;
   clickedQuad = checkInside(e);
   //have to do !== false because the first quad is 0
+
   if (clickedQuad !== false && 
     screen === 'game' && 
-    (adjQuad(clickedQuad, 'tree', 'tree') === true || quads[clickedQuad].tree !== false)) {
-      quadImg(clickedQuad);
+    (adjQuad(clickedQuad, 'tree', 'tree') === true || quads[clickedQuad].tree !== 'none')) {
+      quads[clickedQuad].updateTree();
   }
-  if (treeNum === quads.length && screen === 'game') {
+  if (treeNum === quads.length && screen === 'game' && win === false) {
     alert('You win!');
+    win = true;
   }
 }
 
 //draw one quad
 function drawQuad(i, color=quads[i].color) {
   if (quads[i].biome === 'jungle') {
-    color = '#' + (color - biomes[quads[i].biome].color).toString(16);
+    color = '#' + (color - 0x1b1b1b).toString(16);
   }
   else if (quads[i].biome === 'mountain') {
     color = '#' + quads[i].shade + quads[i].shade + quads[i].shade;
@@ -330,7 +351,6 @@ function drawQuad(i, color=quads[i].color) {
   else {
     color = '#' + color.toString(16);
   }
-  quads[i].newColor = color;
 
   ctx.fillStyle = color;
   ctx.lineWidth = 0.3;
@@ -353,60 +373,13 @@ function centerImg(quad, img, imgHeight) {
   img.style.top = centerCoords[1] + canvas.offsetTop - ((imgHeight/50)*imgSize)/2 + boxMuller()*4 - 3 + 'px'; //-3 so the trunk doesn't stick out the bottom
 }
 
-// add saplings or remove trees, based on the biome of that quad
-function quadImg(quad, treeState='sapling') {
-  let coords = quadRef(quad);
-  if (quads[quad].tree === false && biomes[quads[quad].biome].seeds > 0) {
-    let img = document.createElement('IMG');
-    treeNum++;
-    if (treeState === 'sapling') {
-      img.src = 'saplingSmall.png';
-      biomes[quads[quad].biome].seeds--;
-      biomes[quads[quad].biome].seedCounter.textContent = biomes[quads[quad].biome].seeds;
-      treeGrowth(quad);
-    }
-    else if (treeState === 'tree') {
-      img.src = biomes[quads[quad].biome].src;
-    }
-
-    img.classList.add('treeimg');
-    img.id = `img:${coords[0]}::${coords[1]}:`; //give each one a unique id for removal & stuff
-
-    centerImg(quad, img, biomes[quads[quad].biome].height);
-    afterStart.appendChild(img);
-    quads[quad].tree = treeState;
-  }
-  else if (quads[quad].tree === 'tree' && treeNum > 1) {
-    let findImg = document.getElementById(`img:${coords[0]}::${coords[1]}:`);
-    findImg.parentNode.removeChild(findImg);
-    if (quads[quad].tree === 'tree') {
-      logs ++;
-      logNum.textContent = logs;
-      let addSeeds = Math.random() > 0.25 ? 1 : 2;
-      biomes[quads[quad].biome].seeds += addSeeds;
-      biomes[quads[quad].biome].seedCounter.textContent = biomes[quads[quad].biome].seeds;
-    }
-    quads[quad].tree = false;
-    treeNum--;
-  }
-}
-
-//grow a sapling into a tree
-function treeGrowth(quad) {
-  window.setTimeout(() => {
-    quads[quad].tree = 'tree';
-    let coords = quadRef(quad);
-    let findImg = document.getElementById(`img:${coords[0]}::${coords[1]}:`);
-    findImg.src = biomes[quads[quad].biome].src;
-  }, 4000 + Math.trunc(Math.random()*2000));
-}
-
 //check if a click on the canvas is inside a quadrilateral, and if so, which one
 function checkInside(e) {
   //cross products for each side going in a circle - cross point vectors for both points that define each side
   //needs to be in a 3d coordinate system, with z being the same for all vectors
   //if the cross products are taken going clockwise, in a right-hand coordinate system, if the dot product of a given point vector with each of the line vectors for each of the sides is negative, that point is inside the polygon
   //the sign of the dot product is flipped if going counterclockwise or using a left-hand coordinate system
+  //or randomly when switching to a quad class instead of defining an object each time pushing to the quads array??????????
 
   let tempSideVector;
 
@@ -416,7 +389,7 @@ function checkInside(e) {
       tempSideVector = crossProd([quads[j][corners[i]].x, quads[j][corners[i]].y], [quads[j][corners[i+1]].x, quads[j][corners[i+1]].y]);
       dotChecks.push(dotProd(tempSideVector, [e.clientX - newOffsetX, e.clientY - canvas.offsetTop + window.pageYOffset, 1]));
     }
-    if (dotChecks[0] > 0 && dotChecks[1] > 0 && dotChecks[2] > 0 && dotChecks[3] > 0) {
+    if (dotChecks[0] < 0 && dotChecks[1] < 0 && dotChecks[2] < 0 && dotChecks[3] < 0) {
       //return number of the quadrilateral clicked on
       return j;
       //return quad-based coordinates of quad clicked on
@@ -433,17 +406,6 @@ function findCenter(quad) {
   return [avgX, avgY];
 }
 
-//check if the checkQuad is adjacent to the centerQuad - currently not used
-function checkAdj(centerQuad, checkQuad) {
-  if (checkQuad === centerQuad + 1 || 
-    checkQuad === centerQuad - 1 || 
-    checkQuad === centerQuad + gridWidth-1 || 
-    checkQuad === centerQuad - (gridWidth-1)) {
-    return true;
-  }
-  return false;
-}
- 
 //check if there is an adjacent quad with the specified property being the specified value 
 function adjQuad (checkQuad, prop, val) {
   if ((checkQuad%(gridWidth-1)-gridWidth+2 !== 0 && quads[checkQuad+1] !== undefined && quads[checkQuad+1][prop] === val) || 
@@ -455,7 +417,7 @@ function adjQuad (checkQuad, prop, val) {
   return false;
 }
 
-//switches between coordinates and numbers for quads
+//switches between coordinates and numbers for quads - only used for generating biomes at the moment
 function quadRef(quad) {
   //if input a number
   if (quad[1] === undefined) {
@@ -468,7 +430,7 @@ function quadRef(quad) {
 }
 
 //generate a biome
-function biome(size, type) {
+function makeBiome(size, type) {
   size --; //correct for the center one already being counted - size is the radius in quads
   let center;
   //do while loop to make sure the biomes don't generate on top of or right next to each other
@@ -482,13 +444,11 @@ function biome(size, type) {
   //add some sort of randomness to the biome shape?
 
   //array of coordinates for biome
-  let biome = [];
   for (let k = 0; k < 4; k++) {
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size-i; j++) {
         let tempQuad = quadRef([centerCoords[0]+((size-i)-j)*coordSigns[k]+biomeFixAlign[k], centerCoords[1]+j*coordSigns[k+1]+biomeFixAlign[k]]);
         if (quads[tempQuad] !== undefined) {
-          biome.push(tempQuad);
           quads[tempQuad].biome = type;
         }
       }
