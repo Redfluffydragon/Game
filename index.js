@@ -147,8 +147,7 @@ class Quad {
 let treeNum = 0;
 
 //changes the number of points in the grid
-// let gridWidth = gotchem('gridWidth', 19);
-let gridWidth = 7;
+let gridWidth = gotchem('gridWidth', 19);
 let maxGridWidth = 21;
 let minGridWidth = 5;
 let gridHeight = 9;
