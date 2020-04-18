@@ -9,6 +9,8 @@ body {
 button {
   background:#5dd3b5;
   cursor: pointer;
+  font-family: fantasy;
+  color: #381d69;
 } 
 
 .ssbtns {
@@ -17,8 +19,6 @@ button {
   margin: auto;
   margin-bottom: 20px;
   font-size: 70px;
-  font-family: fantasy;
-  color: #381d69;
 }
 
 #resumebtn {
@@ -50,6 +50,38 @@ button {
 
 #afterStart {
   display: none;
+  font-size: calc(1vmax + 12px);
+}
+
+#afterStart p {
+  margin-top: 0;
+}
+
+.inline {
+  display: inline;
+}
+
+.counter {
+  display: inline;
+  border: 2px outset buttonface;
+  padding: 5px;
+  font-family: fantasy;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.treebtn {
+  font-size: calc(1vmax + 12px);
+  padding: 5px;
+  margin-top: -10px;
+}
+
+.seedCounter {
+  display: none;
+}
+
+#seedLabel {
+  border: none;
 }
 
 #backbtn{
@@ -60,6 +92,7 @@ button {
   font-size: 40px;
   font-family: fantasy;
   color: #381d69;
+  display: none;
 }
 
 #why{
