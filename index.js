@@ -17,7 +17,7 @@
  * easter egg idea: remove all the trees back down to one? or let them remove all the trees once they get it full?
  */
 
-"use strict"
+'use strict';
 
 const startbtn = document.getElementById('startbtn');
 const howtobtn = document.getElementById('howtobtn');
@@ -53,7 +53,7 @@ const crossProd = (v1, v2) => [v1[1] - v2[1], v2[0] - v1[0], v1[0]*v2[1] - v1[1]
 //returns v1 dot v2
 const dotProd = (v1, v2) => v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 
-//maps a value from one range to another (taken from arduino map function)
+/**Map a value from one range to another (taken from Arduino map function) */
 const mapVal = (val, fromLow, fromHigh, toLow, toHigh) => (val - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
 
 //Box-Muller transform (turns a uniform distribution into a standard one)
@@ -68,6 +68,7 @@ let quads = []; //array for quadrilaterals (one letter for readability, or at le
 
 //for the canvasclick & win functions so they don't do anything while not on the game screen
 let screen = 'start';
+
 let logs = 0;
 let price = 50;
 let win = false;
@@ -217,7 +218,7 @@ function start() {
   ssbtnsdiv.style.display = 'none';
   afterStart.style.display = 'inline';
   resumebtn.style.display = 'block';
-  startbtn.style.display = "none";
+  startbtn.style.display = 'none';
   backbtn.style.display = 'block';
 
   widthInput.style.display = 'none';
@@ -254,6 +255,7 @@ function start() {
 
 //go to the how to screen
 function howto() {
+  window.location.assign('how-to.html');
   ssbtnsdiv.style.display = 'none';
   howtodiv.style.display = 'inline';
   backbtn.style.display = 'block';
@@ -282,7 +284,7 @@ function resume() {
 function buySeeds(e) {
   if (logs >= price && e.target.matches('button')) {
     for (let i = 0; i < biomeKeys.length; i++) {
-      let tempTree = e.target.id.slice(0, e.target.id.indexOf('b')); //remove "btn" from the end of the id to get just the tree name
+      let tempTree = e.target.id.slice(0, e.target.id.indexOf('b')); //remove 'btn' from the end of the id to get just the tree name
       if (biomes[biomeKeys[i]].tree === tempTree) {
         biomes[[biomeKeys[i]]].buySeeds();
         e.target.style.display = 'none';
@@ -392,7 +394,8 @@ function checkInside(e) {
   
   const corners = ['tl', 'tr', 'br', 'bl', 'tl']; //tl twice so it goes all the way around - for generating side cross products for checkInside
 
-  quadsLoop: for (let j = 0; j < quads.length; j++) {
+  quadsLoop: 
+  for (let j = 0; j < quads.length; j++) {
     for (let i = 0; i < 4; i++) {
       let tempSideVector = crossProd([quads[j][corners[i]].x, quads[j][corners[i]].y], [quads[j][corners[i+1]].x, quads[j][corners[i+1]].y]);
       if (dotProd(tempSideVector, [e.clientX - newOffsetX, e.clientY - canvas.offsetTop + window.pageYOffset, 1]) < 0 === false) {
@@ -405,8 +408,8 @@ function checkInside(e) {
 
 //return canvas coordinates of the center of a quad - input a quad object
 function findCenter(quad) {
-  let avgY = (quad.tl.y + quad.tr.y + quad.br.y + quad.bl.y)/4;
-  let avgX = (quad.tl.x + quad.tr.x + quad.br.x + quad.bl.x)/4;
+  const avgY = (quad.tl.y + quad.tr.y + quad.br.y + quad.bl.y)/4;
+  const avgX = (quad.tl.x + quad.tr.x + quad.br.x + quad.bl.x)/4;
   return [avgX, avgY];
 }
 
@@ -433,14 +436,14 @@ function quadRef(quad) {
   }
 }
 
+//draw all the biomes
 function drawBiomes() {
   //set up biomes in random order so either one can be on top
-  for (let i = biomeKeys.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [biomeKeys[i], biomeKeys[j]] = [biomeKeys[j], biomeKeys[i]];
-  }
+  //.sort() moves toward front if negative, toward back if positive, no move if zero
+  biomeKeys.sort(() => Math.random() - 0.5);
+
   //draw the biomes in the new random order
-  for (let i = 0; i < biomeKeys.length; i++) {
+  for (let i = biomeKeys.length; i--;) {
     makeBiome(4, biomeKeys[i]);
   }
 }
