@@ -5,6 +5,16 @@
  * better win message system (not an alert)
  * Stop you from changing trees after you win?
  * Add more growth stages for trees? (I'm not sure this would be good from a game mechanic standpoint)
+ * be able to remove saplings and get a seed back? or nothing?
+ * be able to buy more than one seed of each kind
+ * add different saplings for each tree type
+ * come up with a better tree than 'default'
+ * give different tree different attributes? more seeds, more logs, faster growth?
+ * more logs: kapok
+ * more seeds: pine?
+ * faster growth: mangrove?
+ * add 'new game' button
+ * easter egg idea: remove all the trees back down to one? or let them remove all the trees once they get it full?
  */
 
 "use strict"
